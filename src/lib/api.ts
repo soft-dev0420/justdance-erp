@@ -1,3 +1,5 @@
+import type { DashboardKSI } from '@/components/juststudio/dashboard/dashboard-types';
+
 import { ApiError, apiFetch } from './api-fetch';
 import type {
   Booking,
@@ -40,6 +42,10 @@ export const authApi = {
   logout: () => request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
   forgotPassword: (email: string) => request<void>('/auth/forgot-password', { method: 'POST', body: { email } }),
   verifyEmail: (token: string) => request<void>(`/auth/verify-email?token=${encodeURIComponent(token)}`),
+};
+
+export const dashboardApi = {
+  ksi: (date?: string) => request<DashboardKSI>(`/dashboard/ksi${date ? `?date=${encodeURIComponent(date)}` : ''}`),
 };
 
 export const studioApi = {
