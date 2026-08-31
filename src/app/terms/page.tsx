@@ -27,8 +27,7 @@ export default function TermsOfServicePage() {
 
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           <strong>Draft notice:</strong> this document reflects how the Just Dance app and ERP actually work today.
-          It follows the same minimal, no-formal-entity approach as our sibling OnlyMassage terms. Set the effective
-          date below before this is treated as final and linked from app store listings.
+          Set the effective date below before this is treated as final and linked from app store listings.
         </div>
 
         <div className="mt-8 flex flex-col gap-8 text-[15px] leading-relaxed text-gray-700">

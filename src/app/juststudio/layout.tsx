@@ -14,7 +14,7 @@ function CenteredSpinner() {
   );
 }
 
-function OnlyDeskShell({ children }: { children: React.ReactNode }) {
+function JustStudioShell({ children }: { children: React.ReactNode }) {
   const { loading: studioLoading } = useStudio();
 
   if (studioLoading) return <CenteredSpinner />;
@@ -27,7 +27,7 @@ function OnlyDeskShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function OnlyDeskLayout({ children }: { children: React.ReactNode }) {
+export default function JustStudioLayout({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
 
   if (authLoading) return <CenteredSpinner />;
@@ -35,7 +35,7 @@ export default function OnlyDeskLayout({ children }: { children: React.ReactNode
 
   return (
     <StudioProvider>
-      <OnlyDeskShell>{children}</OnlyDeskShell>
+      <JustStudioShell>{children}</JustStudioShell>
     </StudioProvider>
   );
 }

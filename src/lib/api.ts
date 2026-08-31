@@ -1,5 +1,6 @@
 import { ApiError, apiFetch } from './api-fetch';
 import type {
+  ActivityLogEntry,
   Booking,
   Category,
   Employee,
@@ -39,6 +40,7 @@ export const authApi = {
   me: () => request<User>('/auth/me'),
   logout: () => request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
   forgotPassword: (email: string) => request<void>('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (body: { token: string; password: string }) => request<void>('/auth/reset-password', { method: 'POST', body }),
   verifyEmail: (token: string) => request<void>(`/auth/verify-email?token=${encodeURIComponent(token)}`),
 };
 
@@ -166,4 +168,8 @@ export const tasksApi = {
   update: (id: string, body: Partial<CreateTaskInput> & { status?: Task['status'] }) =>
     request<Task>(`/tasks/${id}`, { method: 'PATCH', body }),
   remove: (id: string) => request<void>(`/tasks/${id}`, { method: 'DELETE' }),
+};
+
+export const activityApi = {
+  list: () => request<ActivityLogEntry[]>('/activity'),
 };

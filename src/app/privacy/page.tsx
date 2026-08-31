@@ -27,8 +27,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           <strong>Draft notice:</strong> this document reflects what the Just Dance app and ERP actually collect and
-          do today. It follows the same minimal, no-formal-entity approach as our sibling OnlyMassage policy. Set the
-          effective date below before this is treated as final and linked from app store listings.
+          do today. Set the effective date below before this is treated as final and linked from app store listings.
         </div>
 
         <div className="prose-legal mt-8 flex flex-col gap-8 text-[15px] leading-relaxed text-gray-700">
