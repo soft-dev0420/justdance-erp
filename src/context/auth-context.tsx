@@ -6,7 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { authApi } from '@/lib/api';
 import type { User } from '@/lib/types';
 
-const PUBLIC_PATHS = ['/auth/login', '/auth/forgot-password', '/auth/verify-email'];
+const PUBLIC_PATHS = ['/auth/login', '/auth/forgot-password', '/auth/verify-email', '/auth/reset'];
 // /profile/[id] is a public, unauthenticated share-preview page (see
 // app/profile/[id]/page.tsx) — matched by prefix since the id is dynamic.
 const isPublicPath = (pathname: string) => PUBLIC_PATHS.includes(pathname) || pathname.startsWith('/profile/');

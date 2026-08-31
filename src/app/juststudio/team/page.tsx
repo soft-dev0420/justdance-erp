@@ -1,56 +1,81 @@
 'use client';
 
-import { Crown, Loader2, Plus, UserSquare2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Loader2, Plus, UserSquare2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { PageHeader } from '@/components/juststudio/page-header';
+import { TeamFilters } from '@/components/juststudio/team/team-filters';
+import { TeamFormModal } from '@/components/juststudio/team/team-form-modal';
+import { TeamMemberCard } from '@/components/juststudio/team/team-member-card';
+import { TeamProfilePanel } from '@/components/juststudio/team/team-profile-panel';
 import { Button } from '@/components/juststudio/ui/button';
 import { EmptyState } from '@/components/juststudio/ui/empty-state';
-import { Input, Label, Select } from '@/components/juststudio/ui/input';
-import { Modal } from '@/components/juststudio/ui/modal';
-import { employeesApi, rolesApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
+import { employeesApi, rolesApi } from '@/lib/api';
 import type { Employee, Role } from '@/lib/types';
-
-const STATUS_COLORS: Record<Employee['status'], string> = {
-  available: 'bg-emerald-50 text-emerald-600',
-  vacation: 'bg-sky-50 text-sky-600',
-  sick: 'bg-amber-50 text-amber-600',
-  unavailable: 'bg-gray-100 text-gray-500',
-  'off-duty': 'bg-gray-100 text-gray-500',
-};
 
 export default function TeamPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [roleId, setRoleId] = useState('');
+
+  const [activeRole, setActiveRole] = useState('All');
+  const [sortBy, setSortBy] = useState('name');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [selected, setSelected] = useState<Employee | null>(null);
+  const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const load = () => Promise.all([employeesApi.list(), rolesApi.list()]).then(([e, r]) => {
-    setEmployees(e);
-    setRoles(r);
-  }).finally(() => setLoading(false));
+  const load = () =>
+    Promise.all([employeesApi.list(), rolesApi.list()])
+      .then(([e, r]) => {
+        setEmployees(e);
+        setRoles(r);
+      })
+      .finally(() => setLoading(false));
 
   useEffect(() => {
     load();
   }, []);
 
-  const onInvite = async () => {
-    if (!name || !email) return;
+  const roleCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const e of employees) {
+      const name = e.role?.name ?? 'No role';
+      counts[name] = (counts[name] ?? 0) + 1;
+    }
+    return counts;
+  }, [employees]);
+
+  const filtered = useMemo(() => {
+    let result = [...employees];
+    if (activeRole !== 'All') result = result.filter((e) => (e.role?.name ?? 'No role') === activeRole);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((e) => e.name.toLowerCase().includes(q) || (e.email ?? '').toLowerCase().includes(q));
+    }
+    result.sort((a, b) => {
+      if (sortBy === 'role') return (a.role?.name ?? '').localeCompare(b.role?.name ?? '');
+      if (sortBy === 'status') return a.status.localeCompare(b.status);
+      return a.name.localeCompare(b.name);
+    });
+    return result;
+  }, [employees, activeRole, sortBy, searchQuery]);
+
+  const onAdd = async (values: { name: string; email: string; roleId: string; speciality: string }) => {
     setSubmitting(true);
     try {
-      await employeesApi.create({ name, email, roleId: roleId || undefined });
+      const created = await employeesApi.create({
+        name: values.name,
+        email: values.email,
+        roleId: values.roleId || undefined,
+        speciality: values.speciality || undefined,
+      });
+      setEmployees((prev) => [...prev, created]);
       toast.success('Invite sent');
-      setModalOpen(false);
-      setName('');
-      setEmail('');
-      setRoleId('');
-      load();
+      setFormMode(null);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Failed to invite team member');
     } finally {
@@ -58,90 +83,96 @@ export default function TeamPage() {
     }
   };
 
-  const onStatusChange = async (id: string, status: Employee['status']) => {
-    await employeesApi.updateStatus(id, status);
-    load();
+  const onEdit = async (values: { name: string; roleId: string; speciality: string; status: Employee['status'] }) => {
+    if (!selected) return;
+    setSubmitting(true);
+    try {
+      // update() returns the role relation populated; updateStatus() doesn't
+      // (it's a plain Prisma update with no include), so it can't be used as
+      // the merged source of truth on its own — apply the status locally
+      // onto update()'s fuller response instead.
+      const withDetails = await employeesApi.update(selected.id, {
+        name: values.name,
+        roleId: values.roleId || undefined,
+        speciality: values.speciality,
+      });
+      await employeesApi.updateStatus(selected.id, values.status);
+      const merged = { ...withDetails, status: values.status };
+      setEmployees((prev) => prev.map((e) => (e.id === merged.id ? merged : e)));
+      setSelected(merged);
+      toast.success('Team member updated');
+      setFormMode(null);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save changes');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div>
+    <div className="flex min-h-full flex-col">
       <PageHeader
         title="Team"
         description="Everyone with access to this studio."
         action={
-          <Button onClick={() => setModalOpen(true)}>
+          <Button onClick={() => setFormMode('add')}>
             <Plus size={16} /> Invite team member
           </Button>
         }
       />
 
-      <div className="p-6 sm:p-8">
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="animate-spin text-accent-500" size={24} />
-          </div>
-        ) : employees.length === 0 ? (
-          <EmptyState icon={UserSquare2} title="No team members" />
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-            {employees.map((emp) => (
-              <div key={emp.id} className="flex items-center justify-between gap-4 border-b border-gray-100 px-4 py-3.5 last:border-b-0 hover:bg-gray-50">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium text-gray-900">{emp.name}</p>
-                    {emp.isOwner && <Crown size={13} className="flex-shrink-0 text-accent-500" />}
-                  </div>
-                  <p className="truncate text-xs text-gray-500">
-                    {emp.email} {emp.role && `· ${emp.role.name}`}
-                  </p>
+      <div className="flex flex-1">
+        <div className="flex-1 p-6 sm:p-8">
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="animate-spin text-accent-500" size={24} />
+            </div>
+          ) : (
+            <>
+              <TeamFilters
+                roleCounts={roleCounts}
+                total={employees.length}
+                activeRole={activeRole}
+                setActiveRole={setActiveRole}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+              />
+
+              {filtered.length === 0 ? (
+                <EmptyState icon={UserSquare2} title="No team members found" description={searchQuery || activeRole !== 'All' ? 'Try adjusting your filters.' : undefined} />
+              ) : (
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {filtered.map((member) => (
+                    <TeamMemberCard key={member.id} member={member} isSelected={selected?.id === member.id} onSelect={(m) => setSelected((prev) => (prev?.id === m.id ? null : m))} />
+                  ))}
                 </div>
-                {emp.isOwner ? (
-                  <span className="flex-shrink-0 rounded-full bg-accent-50 px-2.5 py-1 text-xs font-medium text-accent-600">Owner</span>
-                ) : (
-                  <select
-                    value={emp.status}
-                    onChange={(e) => onStatusChange(emp.id, e.target.value as Employee['status'])}
-                    className={`flex-shrink-0 rounded-full border-0 px-2.5 py-1 text-xs font-medium outline-none ${STATUS_COLORS[emp.status]}`}
-                  >
-                    <option value="available">Available</option>
-                    <option value="vacation">Vacation</option>
-                    <option value="sick">Sick</option>
-                    <option value="unavailable">Unavailable</option>
-                    <option value="off-duty">Off duty</option>
-                  </select>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+            </>
+          )}
+        </div>
+
+        <TeamProfilePanel
+          member={selected}
+          onClose={() => setSelected(null)}
+          onEdit={(m) => {
+            setSelected(m);
+            setFormMode('edit');
+          }}
+        />
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Invite team member">
-        <div className="flex flex-col gap-4">
-          <div>
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
-          </div>
-          <div>
-            <Label>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="teammate@example.com" />
-          </div>
-          <div>
-            <Label>Role (optional)</Label>
-            <Select value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-              <option value="">No role assigned yet</option>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <Button onClick={onInvite} disabled={submitting || !name || !email}>
-            {submitting ? 'Sending invite…' : 'Send invite'}
-          </Button>
-        </div>
-      </Modal>
+      <TeamFormModal
+        key={formMode === 'edit' ? selected?.id : formMode}
+        mode={formMode}
+        member={selected}
+        roles={roles}
+        submitting={submitting}
+        onClose={() => setFormMode(null)}
+        onSubmitAdd={onAdd}
+        onSubmitEdit={onEdit}
+      />
     </div>
   );
 }

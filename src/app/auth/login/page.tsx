@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
@@ -97,6 +98,10 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
+
+          <Link href="/auth/forgot-password" className="-mt-1 self-end text-xs font-medium text-accent-600 hover:text-accent-700">
+            Forgot password?
+          </Link>
 
           <button
             type="submit"

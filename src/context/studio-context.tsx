@@ -26,7 +26,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false));
+    let ignore = false;
+    (async () => {
+      try {
+        await refresh();
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
   }, [refresh]);
 
   return <StudioContext.Provider value={{ studio, loading, refresh }}>{children}</StudioContext.Provider>;
