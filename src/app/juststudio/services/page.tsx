@@ -1,37 +1,38 @@
 'use client';
 
-import { Loader2, Plus, Tags, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Tags } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
+import { CategoryCard } from '@/components/juststudio/services/category-card';
+import { ServiceFormModal } from '@/components/juststudio/services/service-form-modal';
+import { ServiceStats } from '@/components/juststudio/services/service-stats';
 import { PageHeader } from '@/components/juststudio/page-header';
 import { Button } from '@/components/juststudio/ui/button';
 import { EmptyState } from '@/components/juststudio/ui/empty-state';
 import { Input, Label } from '@/components/juststudio/ui/input';
 import { Modal } from '@/components/juststudio/ui/modal';
-import { catalogApi } from '@/lib/api';
+import { catalogApi, studioApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
-import type { Category } from '@/lib/types';
+import type { Category, Service } from '@/lib/types';
 
 export default function ServicesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [currency, setCurrency] = useState('USD');
   const [loading, setLoading] = useState(true);
 
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [categoryName, setCategoryName] = useState('');
-
-  const [serviceModalFor, setServiceModalFor] = useState<number | null>(null);
-  const [serviceName, setServiceName] = useState('');
-  const [hours, setHours] = useState('0');
-  const [minutes, setMinutes] = useState('60');
-  const [price, setPrice] = useState('');
-
   const [submitting, setSubmitting] = useState(false);
 
-  const load = () => catalogApi.listCategories().then(setCategories).finally(() => setLoading(false));
+  const [serviceModal, setServiceModal] = useState<{ categoryId: number; service: Service | null } | null>(null);
+
+  const load = () => catalogApi.listCategories().then(setCategories);
 
   useEffect(() => {
-    load();
+    Promise.all([load(), studioApi.me().then((s) => setCurrency(s.currency ?? 'USD'))])
+      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Failed to load services'))
+      .finally(() => setLoading(false));
   }, []);
 
   const onAddCategory = async () => {
@@ -50,41 +51,24 @@ export default function ServicesPage() {
     }
   };
 
-  const onRemoveCategory = async (id: number) => {
-    if (!confirm('Delete this category and all its services?')) return;
-    await catalogApi.removeCategory(id);
-    load();
-  };
-
-  const onAddService = async () => {
-    if (serviceModalFor === null || !serviceName.trim() || !price) return;
-    setSubmitting(true);
+  const onDeleteCategory = async (category: Category) => {
+    if (!confirm(`Delete "${category.category}" and all its services?`)) return;
     try {
-      await catalogApi.createService({
-        categoryId: serviceModalFor,
-        name: serviceName.trim(),
-        hours,
-        minutes,
-        price: Number(price),
-      });
-      toast.success('Service added');
-      setServiceModalFor(null);
-      setServiceName('');
-      setHours('0');
-      setMinutes('60');
-      setPrice('');
+      await catalogApi.removeCategory(category.id);
       load();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to add service');
-    } finally {
-      setSubmitting(false);
+      toast.error(err instanceof ApiError ? err.message : 'Failed to delete category');
     }
   };
 
-  const onRemoveService = async (id: string) => {
-    if (!confirm('Delete this service?')) return;
-    await catalogApi.removeService(id);
-    load();
+  const onDeleteService = async (service: Service) => {
+    if (!confirm(`Delete "${service.name}"?`)) return;
+    try {
+      await catalogApi.removeService(service.id);
+      load();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to delete service');
+    }
   };
 
   return (
@@ -99,7 +83,7 @@ export default function ServicesPage() {
         }
       />
 
-      <div className="p-6 sm:p-8">
+      <div className="space-y-6 p-6 sm:p-8">
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="animate-spin text-accent-500" size={24} />
@@ -107,49 +91,21 @@ export default function ServicesPage() {
         ) : categories.length === 0 ? (
           <EmptyState icon={Tags} title="No categories yet" description="Add a category (e.g. Private Lessons) to start listing priced services." />
         ) : (
-          <div className="flex flex-col gap-6">
-            {categories.map((cat) => (
-              <div key={cat.id} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <div className="flex items-center justify-between bg-gray-50 px-4 py-3">
-                  <span className="text-sm font-semibold text-gray-900">{cat.category}</span>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setServiceModalFor(cat.id)}
-                      className="flex items-center gap-1 text-xs font-medium text-accent-600 hover:text-accent-700"
-                    >
-                      <Plus size={13} /> Add service
-                    </button>
-                    <button onClick={() => onRemoveCategory(cat.id)} className="text-gray-400 hover:text-red-500">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-                {cat.services.length === 0 ? (
-                  <p className="px-4 py-4 text-xs text-gray-400">No services in this category yet.</p>
-                ) : (
-                  cat.services.map((service) => (
-                    <div key={service.id} className="flex items-center justify-between border-t border-gray-100 px-4 py-3 hover:bg-gray-50">
-                      <div>
-                        <p className="text-sm text-gray-700">{service.name}</p>
-                        {service.price && (
-                          <p className="text-xs text-gray-500">
-                            {service.price.hours !== '0' && `${service.price.hours}h `}
-                            {service.price.minutes}min
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {service.price && <span className="text-sm font-medium text-gray-700">${service.price.price}</span>}
-                        <button onClick={() => onRemoveService(service.id)} className="text-gray-400 hover:text-red-500">
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            ))}
-          </div>
+          <>
+            <ServiceStats categories={categories} currency={currency} />
+            <div className="flex flex-col gap-6">
+              {categories.map((cat) => (
+                <CategoryCard
+                  key={cat.id}
+                  category={cat}
+                  onAddService={(categoryId) => setServiceModal({ categoryId, service: null })}
+                  onEditService={(service) => setServiceModal({ categoryId: service.categoryId, service })}
+                  onDeleteService={(service) => void onDeleteService(service)}
+                  onDeleteCategory={(category) => void onDeleteCategory(category)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -159,37 +115,13 @@ export default function ServicesPage() {
             <Label>Category name</Label>
             <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Private Lessons" />
           </div>
-          <Button onClick={onAddCategory} disabled={submitting || !categoryName.trim()}>
+          <Button onClick={() => void onAddCategory()} disabled={submitting || !categoryName.trim()}>
             {submitting ? 'Adding…' : 'Add category'}
           </Button>
         </div>
       </Modal>
 
-      <Modal open={serviceModalFor !== null} onClose={() => setServiceModalFor(null)} title="Add service">
-        <div className="flex flex-col gap-4">
-          <div>
-            <Label>Service name</Label>
-            <Input value={serviceName} onChange={(e) => setServiceName(e.target.value)} placeholder="60-min private lesson" />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <Label>Hours</Label>
-              <Input type="number" min={0} value={hours} onChange={(e) => setHours(e.target.value)} />
-            </div>
-            <div>
-              <Label>Minutes</Label>
-              <Input type="number" min={0} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
-            </div>
-            <div>
-              <Label>Price</Label>
-              <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="80" />
-            </div>
-          </div>
-          <Button onClick={onAddService} disabled={submitting || !serviceName.trim() || !price}>
-            {submitting ? 'Adding…' : 'Add service'}
-          </Button>
-        </div>
-      </Modal>
+      {serviceModal && <ServiceFormModal categoryId={serviceModal.categoryId} service={serviceModal.service} onClose={() => setServiceModal(null)} onSaved={load} />}
     </div>
   );
 }

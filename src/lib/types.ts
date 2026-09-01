@@ -15,6 +15,14 @@ export interface Role {
   permissions: Record<string, boolean>;
 }
 
+export interface OpeningDay {
+  id: string;
+  day: string;
+  open: boolean;
+  from: string | null;
+  to: string | null;
+}
+
 export interface Employee {
   id: string;
   studioId: string;
@@ -26,7 +34,21 @@ export interface Employee {
   speciality: string;
   status: 'available' | 'vacation' | 'sick' | 'unavailable' | 'off-duty';
   isOwner: boolean;
+  available: OpeningDay[];
   createdAt: string;
+}
+
+export interface OpeningHours {
+  open: boolean;
+  from: string | null;
+  to: string | null;
+}
+
+export interface DayOpeningHours {
+  day: string;
+  open: boolean;
+  from: string | null;
+  to: string | null;
 }
 
 export interface Studio {
@@ -95,8 +117,24 @@ export interface Booking {
   totalPrice: number;
   totalDuration: string;
   currency: string;
-  status: 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'checked-in'
+    | 'in-progress'
+    | 'completed'
+    | 'cancelled'
+    | 'no-show';
   services: Service[];
+}
+
+export interface BookingSummary {
+  total: number;
+  confirmed: number;
+  pending: number;
+  cancelled: number;
+  completed: number;
+  staff: number;
 }
 
 export interface StockHistoryEntry {

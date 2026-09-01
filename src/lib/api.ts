@@ -4,8 +4,11 @@ import { ApiError, apiFetch } from './api-fetch';
 import type {
   ActivityLogEntry,
   Booking,
+  BookingSummary,
   Category,
+  DayOpeningHours,
   Employee,
+  OpeningHours,
   Role,
   Service,
   StockItem,
@@ -53,6 +56,9 @@ export const dashboardApi = {
 export const studioApi = {
   me: () => request<Studio>('/studio/me'),
   update: (body: { name?: string; city?: string; currency?: string }) => request<Studio>('/studio/me', { method: 'PATCH', body }),
+  openingHours: (date: string) => request<OpeningHours>(`/studio/opening-hours?date=${encodeURIComponent(date)}`),
+  openingHoursWeek: () => request<DayOpeningHours[]>('/studio/opening-hours/week'),
+  setOpeningHoursWeek: (days: DayOpeningHours[]) => request<DayOpeningHours[]>('/studio/opening-hours', { method: 'PUT', body: { days } }),
 };
 
 export const rolesApi = {
@@ -137,6 +143,12 @@ export const bookingsApi = {
   create: (body: CreateBookingInput) => request<Booking>('/bookings', { method: 'POST', body }),
   updateStatus: (id: string, status: Booking['status']) =>
     request<Booking>(`/bookings/${id}/status`, { method: 'PATCH', body: { status } }),
+  reschedule: (id: string, body: { date: string; timeSlot: string }) =>
+    request<Booking>(`/bookings/${id}/reschedule`, { method: 'PATCH', body }),
+  reassign: (id: string, employeeId: string) =>
+    request<Booking>(`/bookings/${id}/reassign`, { method: 'PATCH', body: { employeeId } }),
+  summary: (from: string, to: string) =>
+    request<BookingSummary>(`/bookings/summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
 };
 
 export const stockApi = {

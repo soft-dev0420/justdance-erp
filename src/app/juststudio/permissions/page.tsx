@@ -1,103 +1,215 @@
 'use client';
 
-import { Loader2, ShieldCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
-import { PageHeader } from '@/components/juststudio/page-header';
-import { EmptyState } from '@/components/juststudio/ui/empty-state';
+import { CreateRoleModal } from '@/components/juststudio/permissions/create-role-modal';
+import { PermissionsMatrix } from '@/components/juststudio/permissions/permissions-matrix';
+import { RoleDetails } from '@/components/juststudio/permissions/role-details';
+import { RoleList } from '@/components/juststudio/permissions/role-list';
+import { UnsavedBar } from '@/components/juststudio/permissions/unsaved-bar';
+import { MODULES } from '@/components/juststudio/permissions/types';
 import { rolesApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
 import type { Role } from '@/lib/types';
 
-function PermissionToggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <label className="flex items-center justify-between gap-3 py-2">
-      <span className="text-sm text-gray-700">{label}</span>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={`h-5 w-9 flex-shrink-0 rounded-full transition ${checked ? 'bg-accent-500' : 'bg-gray-200'}`}
-      >
-        <span className={`block h-4 w-4 translate-y-0.5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
-      </button>
-    </label>
-  );
-}
-
 export default function PermissionsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState('');
+  const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const load = () =>
-    rolesApi.list().then((r) => {
-      setRoles(r);
-      setSelectedId((prev) => prev ?? r.find((role) => role.name !== 'owner')?.id ?? r[0]?.id ?? null);
-    }).finally(() => setLoading(false));
+  const [allPerms, setAllPerms] = useState<Record<string, Record<string, boolean>>>({});
+  const [savedPerms, setSavedPerms] = useState<Record<string, Record<string, boolean>>>({});
+  const [details, setDetails] = useState<Record<string, { name: string; description: string }>>({});
+  const [savedDetails, setSavedDetails] = useState<Record<string, { name: string; description: string }>>({});
 
-  useEffect(() => {
-    load();
+  const loadRoles = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await rolesApi.list();
+      setRoles(data);
+
+      const perms: Record<string, Record<string, boolean>> = {};
+      const dets: Record<string, { name: string; description: string }> = {};
+      for (const r of data) {
+        perms[r.id] = r.permissions;
+        dets[r.id] = { name: r.name, description: r.description };
+      }
+      setAllPerms(perms);
+      setSavedPerms(structuredClone(perms));
+      setDetails(dets);
+      setSavedDetails(structuredClone(dets));
+
+      setSelectedId((prev) => prev || data.find((r) => r.name !== 'owner')?.id || data[0]?.id || '');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to load roles');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const selected = roles.find((r) => r.id === selectedId);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadRoles();
+  }, [loadRoles]);
 
-  const onToggle = async (key: string, value: boolean) => {
-    if (!selected) return;
-    // Optimistic update so the toggle feels instant.
-    setRoles((prev) => prev.map((r) => (r.id === selected.id ? { ...r, permissions: { ...r.permissions, [key]: value } } : r)));
+  const selectedRole = roles.find((r) => r.id === selectedId);
+  const locked = selectedRole?.name === 'owner';
+  const currentPerms = useMemo(() => allPerms[selectedId] ?? {}, [allPerms, selectedId]);
+  const currentDetails = details[selectedId] ?? { name: '', description: '' };
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!selectedRole || locked) return false;
+    const permChanged = JSON.stringify(allPerms[selectedId] ?? {}) !== JSON.stringify(savedPerms[selectedId] ?? {});
+    const det = details[selectedId];
+    const saved = savedDetails[selectedId];
+    const detailChanged = det?.name !== saved?.name || det?.description !== saved?.description;
+    return permChanged || detailChanged;
+  }, [allPerms, savedPerms, details, savedDetails, selectedId, selectedRole, locked]);
+
+  const allEnabled = useMemo(
+    () =>
+      MODULES.every((m) => {
+        if (!currentPerms[m.id]) return false;
+        return m.granular?.every((g) => currentPerms[`${m.id}.${g.id}`]) ?? true;
+      }),
+    [currentPerms],
+  );
+
+  const filteredRoles = useMemo(() => {
+    if (!search.trim()) return roles;
+    const q = search.toLowerCase();
+    return roles.filter((r) => r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q));
+  }, [roles, search]);
+
+  const handleTogglePerm = (key: string, value: boolean) => {
+    setAllPerms((prev) => {
+      const rPerms = { ...(prev[selectedId] ?? {}) };
+      rPerms[key] = value;
+      const mod = MODULES.find((m) => m.id === key);
+      mod?.granular?.forEach((g) => {
+        rPerms[`${key}.${g.id}`] = value;
+      });
+      return { ...prev, [selectedId]: rPerms };
+    });
+  };
+
+  const handleToggleAll = (value: boolean) => {
+    setAllPerms((prev) => {
+      const rPerms: Record<string, boolean> = {};
+      MODULES.forEach((mod) => {
+        rPerms[mod.id] = value;
+        mod.granular?.forEach((g) => {
+          rPerms[`${mod.id}.${g.id}`] = value;
+        });
+      });
+      return { ...prev, [selectedId]: rPerms };
+    });
+  };
+
+  const handleSave = async () => {
+    if (!selectedRole || locked || isSaving) return;
+    setIsSaving(true);
     try {
-      await rolesApi.update(selected.id, { permissions: { [key]: value } });
+      const updated = await rolesApi.update(selectedId, {
+        name: currentDetails.name,
+        description: currentDetails.description,
+        permissions: allPerms[selectedId] ?? {},
+      });
+      setSavedPerms((prev) => ({ ...prev, [selectedId]: structuredClone(allPerms[selectedId] ?? {}) }));
+      setSavedDetails((prev) => ({ ...prev, [selectedId]: { name: updated.name, description: updated.description } }));
+      setRoles((prev) => prev.map((r) => (r.id === selectedId ? { ...r, name: updated.name, description: updated.description } : r)));
+      toast.success('Role saved');
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to update permission');
-      load();
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save role');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="animate-spin text-accent-500" size={24} />
-      </div>
-    );
-  }
+  const handleDiscard = () => {
+    setAllPerms((prev) => ({ ...prev, [selectedId]: structuredClone(savedPerms[selectedId] ?? {}) }));
+    setDetails((prev) => ({ ...prev, [selectedId]: { ...savedDetails[selectedId]! } }));
+  };
+
+  const handleCreateRole = async (name: string, description: string) => {
+    try {
+      const created = await rolesApi.create({ name, description });
+      setRoles((prev) => [...prev, created]);
+      setAllPerms((prev) => ({ ...prev, [created.id]: created.permissions }));
+      setSavedPerms((prev) => ({ ...prev, [created.id]: structuredClone(created.permissions) }));
+      setDetails((prev) => ({ ...prev, [created.id]: { name: created.name, description: created.description } }));
+      setSavedDetails((prev) => ({ ...prev, [created.id]: { name: created.name, description: created.description } }));
+      setSelectedId(created.id);
+      setShowCreateModal(false);
+      toast.success(`Role "${created.name}" created`);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to create role');
+    }
+  };
 
   return (
-    <div>
-      <PageHeader title="Roles & Permissions" description="Control what each role can see and do." />
+    <div className="flex h-full flex-col overflow-hidden bg-gray-50">
+      <header className="flex flex-shrink-0 flex-col gap-2 border-b border-gray-100 bg-white px-4 py-3 md:h-[88px] md:flex-row md:items-center md:justify-between md:gap-0 md:px-8 md:py-0">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-gray-900 md:text-2xl">Roles &amp; permissions</h2>
+          <p className="mt-0.5 hidden text-sm text-gray-500 md:block">Control what each role can see and do.</p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex h-9 flex-shrink-0 items-center gap-2 self-start rounded-lg bg-accent-500 px-4 text-sm font-medium text-white shadow-sm shadow-accent-200/50 transition-all hover:bg-accent-600 md:h-10 md:self-auto md:px-5"
+        >
+          <Plus size={16} />
+          Create role
+        </button>
+      </header>
 
-      <div className="flex flex-col gap-6 p-6 sm:flex-row sm:p-8">
-        <div className="flex flex-shrink-0 flex-col gap-1 sm:w-56">
-          {roles.map((role) => (
-            <button
-              key={role.id}
-              onClick={() => setSelectedId(role.id)}
-              className={`rounded-lg px-3 py-2 text-left text-sm capitalize transition ${
-                role.id === selectedId ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50'
-              }`}
-            >
-              {role.name}
-              <span className="ml-2 text-xs text-gray-400">({role.userCount})</span>
-            </button>
-          ))}
+      <div className="relative flex flex-1 flex-col overflow-hidden md:flex-row">
+        <div className="h-full w-full flex-shrink-0 md:w-[320px]">
+          <RoleList roles={filteredRoles} selectedId={selectedId} search={search} isLoading={isLoading} onSelectRole={setSelectedId} onSearchChange={setSearch} onCreateRole={() => setShowCreateModal(true)} />
         </div>
 
-        <div className="flex-1">
-          {!selected ? (
-            <EmptyState icon={ShieldCheck} title="No roles yet" />
-          ) : selected.name === 'owner' ? (
-            <p className="text-sm text-gray-500">The owner role always has full access and can&apos;t be restricted.</p>
+        <div className="flex-1 overflow-y-auto bg-gray-50 pb-28">
+          {isLoading ? (
+            <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
+              <div className="animate-pulse space-y-4 rounded-2xl border border-gray-100 bg-white p-6">
+                <div className="h-5 w-1/4 rounded bg-gray-100" />
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="h-11 rounded-lg bg-gray-50" />
+                  <div className="h-11 rounded-lg bg-gray-50" />
+                </div>
+              </div>
+            </div>
+          ) : !selectedRole ? (
+            <div className="flex h-full flex-col items-center justify-center gap-4 py-24 text-center">
+              <p className="text-base font-semibold text-gray-900">No roles yet</p>
+              <p className="max-w-xs text-sm text-gray-500">Create a role to control what your team can see and do.</p>
+              <button onClick={() => setShowCreateModal(true)} className="flex h-9 items-center gap-2 rounded-lg bg-accent-500 px-5 text-sm font-medium text-white transition-all hover:bg-accent-600">
+                <Plus size={16} />
+                Create a role
+              </button>
+            </div>
           ) : (
-            <div className="max-w-lg divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white px-4 shadow-sm">
-              {Object.entries(selected.permissions)
-                .filter(([key]) => !key.includes('.'))
-                .map(([key, value]) => (
-                  <PermissionToggle key={key} label={key} checked={value} onChange={(v) => onToggle(key, v)} />
-                ))}
+            <div className="mx-auto max-w-5xl space-y-8 p-4 md:p-8">
+              <RoleDetails
+                locked={locked}
+                details={currentDetails}
+                onChangeName={(name) => setDetails((prev) => ({ ...prev, [selectedId]: { ...prev[selectedId]!, name } }))}
+                onChangeDescription={(description) => setDetails((prev) => ({ ...prev, [selectedId]: { ...prev[selectedId]!, description } }))}
+              />
+              <PermissionsMatrix currentPerms={currentPerms} locked={locked} allEnabled={allEnabled} onToggle={handleTogglePerm} onToggleAll={handleToggleAll} />
             </div>
           )}
         </div>
+
+        {hasUnsavedChanges && <UnsavedBar roleName={currentDetails.name} onSave={() => void handleSave()} onDiscard={handleDiscard} isSaving={isSaving} />}
       </div>
+
+      {showCreateModal && <CreateRoleModal onClose={() => setShowCreateModal(false)} onCreate={(name, description) => void handleCreateRole(name, description)} />}
     </div>
   );
 }

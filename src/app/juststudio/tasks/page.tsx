@@ -1,131 +1,202 @@
 'use client';
 
-import { ListChecks, Loader2, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
-import { PageHeader } from '@/components/juststudio/page-header';
-import { Button } from '@/components/juststudio/ui/button';
-import { EmptyState } from '@/components/juststudio/ui/empty-state';
-import { Input, Label, Select } from '@/components/juststudio/ui/input';
-import { Modal } from '@/components/juststudio/ui/modal';
-import { tasksApi } from '@/lib/api';
+import { TaskColumn } from '@/components/juststudio/tasks/task-column';
+import { TaskDetailPanel } from '@/components/juststudio/tasks/task-detail-panel';
+import { TaskFormModal } from '@/components/juststudio/tasks/task-form-modal';
+import { COLUMNS, isOverdue, type Staff } from '@/components/juststudio/tasks/types';
+import { employeesApi, tasksApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
 import type { Task } from '@/lib/types';
 
-const PRIORITY_COLORS: Record<Task['priority'], string> = {
-  low: 'bg-gray-100 text-gray-500',
-  medium: 'bg-sky-50 text-sky-600',
-  high: 'bg-red-50 text-red-600',
-};
-
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [title, setTitle] = useState('');
-  const [priority, setPriority] = useState<Task['priority']>('medium');
-  const [dueDate, setDueDate] = useState('');
-
-  const load = () => tasksApi.list().then(setTasks).finally(() => setLoading(false));
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
-    load();
+    Promise.all([tasksApi.list(), employeesApi.list()])
+      .then(([t, emps]) => {
+        setTasks(t);
+        setStaff(emps.map((e) => ({ id: e.id, name: e.name, speciality: e.speciality })));
+      })
+      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Failed to load tasks'))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const onCreate = async () => {
-    if (!title || !dueDate) return;
-    setSubmitting(true);
+  const filteredTasks = useMemo(() => {
+    if (!search.trim()) return tasks;
+    const q = search.toLowerCase();
+    return tasks.filter((t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+  }, [tasks, search]);
+
+  const stats = useMemo(
+    () => ({
+      pending: tasks.filter((t) => t.status === 'pending').length,
+      inProgress: tasks.filter((t) => t.status === 'in-progress').length,
+      overdue: tasks.filter((t) => isOverdue(t)).length,
+    }),
+    [tasks],
+  );
+
+  const handleStatusChange = async (taskId: string, status: Task['status']) => {
     try {
-      await tasksApi.create({ title, priority, dueDate });
-      toast.success('Task added');
-      setModalOpen(false);
-      setTitle('');
-      setDueDate('');
-      load();
+      const updated = await tasksApi.update(taskId, { status });
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      setActiveTask((prev) => (prev?.id === taskId ? updated : prev));
+      toast.success(`Moved to ${status.replace('-', ' ')}`);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to add task');
-    } finally {
-      setSubmitting(false);
+      toast.error(err instanceof ApiError ? err.message : 'Failed to update task');
     }
   };
 
-  const toggleComplete = async (task: Task) => {
-    await tasksApi.update(task.id, { status: task.status === 'completed' ? 'pending' : 'completed' });
-    load();
+  const handleSave = async (formData: Omit<Task, 'id' | 'studioId' | 'createdBy' | 'updatedBy'>) => {
+    setIsSaving(true);
+    try {
+      if (editingTask) {
+        const updated = await tasksApi.update(editingTask.id, formData);
+        setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+        if (activeTask?.id === updated.id) setActiveTask(updated);
+        toast.success('Task updated');
+      } else {
+        const created = await tasksApi.create(formData);
+        setTasks((prev) => [created, ...prev]);
+        toast.success('Task created');
+      }
+      setShowFormModal(false);
+      setEditingTask(null);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save task');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  return (
-    <div>
-      <PageHeader
-        title="Tasks"
-        description="To-dos for you and your team."
-        action={
-          <Button onClick={() => setModalOpen(true)}>
-            <Plus size={16} /> Add task
-          </Button>
-        }
-      />
+  const handleDelete = async (taskId: string) => {
+    try {
+      await tasksApi.remove(taskId);
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      if (activeTask?.id === taskId) setActiveTask(null);
+      toast.success('Task deleted');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to delete task');
+    }
+  };
 
-      <div className="p-6 sm:p-8">
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="animate-spin text-accent-500" size={24} />
+  if (isLoading) {
+    return (
+      <div className="flex h-full flex-col overflow-hidden bg-gray-50/50">
+        <div className="h-16 shrink-0 animate-pulse border-b border-gray-200 bg-white" />
+        <div className="flex flex-1 gap-6 overflow-hidden p-4 md:p-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="w-[340px] shrink-0 space-y-3">
+              <div className="h-5 w-24 animate-pulse rounded-full bg-gray-200" />
+              {[1, 2, 3].map((j) => (
+                <div key={j} className="h-28 animate-pulse rounded-xl bg-gray-100" />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex h-full flex-col overflow-hidden bg-gray-50/50">
+      <header className="z-10 flex h-16 shrink-0 items-center justify-between border-b border-gray-100 bg-white/80 px-4 backdrop-blur-md md:px-6">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-semibold text-gray-900">Tasks</h1>
+          <div className="hidden items-center gap-2 md:flex">
+            <span className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+              Pending: {stats.pending}
+            </span>
+            <span className="flex items-center gap-1.5 rounded-full bg-accent-50 px-3 py-1.5 text-xs font-medium text-accent-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent-500" />
+              In progress: {stats.inProgress}
+            </span>
+            {stats.overdue > 0 && (
+              <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Overdue: {stats.overdue}
+              </span>
+            )}
           </div>
-        ) : tasks.length === 0 ? (
-          <EmptyState icon={ListChecks} title="No tasks yet" />
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-            {tasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between gap-4 border-b border-gray-100 px-4 py-3.5 last:border-b-0 hover:bg-gray-50">
-                <label className="flex min-w-0 items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={task.status === 'completed'}
-                    onChange={() => toggleComplete(task)}
-                    className="h-4 w-4 flex-shrink-0 rounded border-gray-300 bg-white accent-[#6E3BFF]"
-                  />
-                  <span className={`truncate text-sm ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                    {task.title}
-                  </span>
-                </label>
-                <div className="flex flex-shrink-0 items-center gap-3">
-                  <span className="text-xs text-gray-500">{task.dueDate}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PRIORITY_COLORS[task.priority]}`}>{task.priority}</span>
-                </div>
-              </div>
-            ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="relative hidden md:block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tasks…"
+              className="w-56 rounded-lg border-none bg-gray-100 py-2 pl-9 pr-4 text-sm outline-none transition-all focus:bg-white focus:ring-2 focus:ring-accent-500"
+            />
           </div>
-        )}
+          <button
+            onClick={() => {
+              setEditingTask(null);
+              setShowFormModal(true);
+            }}
+            className="flex items-center gap-2 rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-600"
+          >
+            <Plus size={16} />
+            New task
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 md:p-6">
+        <div className="flex h-full min-w-max gap-6">
+          {COLUMNS.map((col) => (
+            <TaskColumn
+              key={col.id}
+              column={col}
+              tasks={filteredTasks.filter((t) => t.status === col.id)}
+              staff={staff}
+              activeTaskId={activeTask?.id ?? null}
+              onTaskClick={(task) => setActiveTask((prev) => (prev?.id === task.id ? null : task))}
+            />
+          ))}
+        </div>
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Add task">
-        <div className="flex flex-col gap-4">
-          <div>
-            <Label>Title</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Order new costumes" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Due date</Label>
-              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-            </div>
-            <div>
-              <Label>Priority</Label>
-              <Select value={priority} onChange={(e) => setPriority(e.target.value as Task['priority'])}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </Select>
-            </div>
-          </div>
-          <Button onClick={onCreate} disabled={submitting || !title || !dueDate}>
-            {submitting ? 'Adding…' : 'Add task'}
-          </Button>
-        </div>
-      </Modal>
+      {activeTask && (
+        <TaskDetailPanel
+          task={activeTask}
+          staff={staff}
+          onClose={() => setActiveTask(null)}
+          onStatusChange={(id, status) => void handleStatusChange(id, status)}
+          onEdit={(task) => {
+            setEditingTask(task);
+            setShowFormModal(true);
+          }}
+          onDelete={(id) => void handleDelete(id)}
+        />
+      )}
+
+      <TaskFormModal
+        isOpen={showFormModal}
+        onClose={() => {
+          setShowFormModal(false);
+          setEditingTask(null);
+        }}
+        task={editingTask}
+        staff={staff}
+        onSave={(data) => void handleSave(data)}
+        isSaving={isSaving}
+      />
     </div>
   );
 }

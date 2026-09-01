@@ -4,6 +4,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { PageHeader } from '@/components/juststudio/page-header';
+import { OpeningHoursCard } from '@/components/juststudio/settings/opening-hours-card';
 import { Button } from '@/components/juststudio/ui/button';
 import { Input, Label } from '@/components/juststudio/ui/input';
 import { useStudio } from '@/context/studio-context';
@@ -34,7 +35,7 @@ export default function SettingsPage() {
     <div>
       <PageHeader title="Settings" description="Studio configuration." />
 
-      <div className="max-w-md p-6 sm:p-8">
+      <div className="flex max-w-xl flex-col gap-6 p-6 sm:p-8">
         <div className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <div>
             <Label>Studio name</Label>
@@ -52,6 +53,8 @@ export default function SettingsPage() {
             {saving ? 'Saving…' : 'Save changes'}
           </Button>
         </div>
+
+        <OpeningHoursCard />
       </div>
     </div>
   );

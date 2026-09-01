@@ -10,7 +10,10 @@ import { formatDate, getInitials, STATUS_BADGE_CLASS, STATUS_LABELS } from './ty
 type Tab = 'overview' | 'bookings' | 'notes';
 
 const BOOKING_STATUS_STYLE: Record<Booking['status'], { bar: string; badge: string }> = {
+  pending: { bar: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700' },
   confirmed: { bar: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700' },
+  'checked-in': { bar: 'bg-sky-400', badge: 'bg-sky-50 text-sky-700' },
+  'in-progress': { bar: 'bg-accent-500', badge: 'bg-accent-50 text-accent-700' },
   completed: { bar: 'bg-accent-400', badge: 'bg-accent-50 text-accent-700' },
   cancelled: { bar: 'bg-gray-300', badge: 'bg-gray-100 text-gray-500' },
   'no-show': { bar: 'bg-red-400', badge: 'bg-red-50 text-red-600' },
