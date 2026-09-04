@@ -137,6 +137,27 @@ export interface BookingSummary {
   staff: number;
 }
 
+export interface ShiftSlot {
+  id: string;
+  employeeId: string;
+  employee: Employee;
+  startTime: string;
+  endTime: string;
+  shiftType: 'morning' | 'afternoon' | 'evening';
+}
+
+export interface ShiftDay {
+  id: string;
+  studioId: string;
+  date: string;
+  location: string;
+  notes: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  slots: ShiftSlot[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StockHistoryEntry {
   id: string;
   type: 'replenish' | 'use' | 'initial';

@@ -120,6 +120,13 @@ export default function LoginPage() {
 
         <div className="flex flex-col gap-3">
           <a
+            href={`${API_URL}/auth/apple`}
+            className="flex items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-black py-2.5 text-sm font-medium text-white transition hover:bg-gray-900"
+          >
+            <AppleGlyph />
+            Continue with Apple
+          </a>
+          <a
             href={`${API_URL}/auth/google`}
             className="flex items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-gray-50 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
           >
@@ -139,10 +146,18 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-xs text-gray-400">
           Only provider accounts have a studio dashboard. Use the same credentials as the Just Dance mobile app —
-          Google only works if you already have an account.
+          social sign-in only works if you already have an account.
         </p>
       </div>
     </div>
+  );
+}
+
+function AppleGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden fill="currentColor">
+      <path d="M16.365 1.43c0 1.14-.437 2.096-1.312 2.87-.898.789-1.968 1.246-3.038 1.16a3.66 3.66 0 01-.03-.42c0-1.09.502-2.14 1.311-2.9C14.16.65 15.406.09 16.315.02c.03.16.05.32.05.41zm3.64 15.06c-.395.918-.582 1.328-1.087 2.15-.706 1.144-1.702 2.567-2.936 2.578-1.098.012-1.38-.716-2.868-.706-1.487.01-1.797.72-2.895.71-1.235-.012-2.176-1.3-2.883-2.443-1.975-3.196-2.183-6.947-.964-8.943.866-1.421 2.234-2.253 3.52-2.253 1.309 0 2.132.72 3.215.72 1.05 0 1.688-.72 3.198-.72 1.144 0 2.355.624 3.219 1.702-2.83 1.55-2.37 5.586.481 7.205z" />
+    </svg>
   );
 }
 

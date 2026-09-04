@@ -2,7 +2,7 @@
 
 import {
   Boxes,
-  CalendarDays,
+  CalendarClock,
   ChevronsLeft,
   ChevronsRight,
   LayoutDashboard,
@@ -27,10 +27,14 @@ const MAIN_NAV = [
   { href: '/juststudio', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/juststudio/clients', label: 'Clients', icon: Users },
   { href: '/juststudio/team', label: 'Team', icon: UserSquare2 },
-  { href: '/juststudio/schedule', label: 'Schedule', icon: CalendarDays },
+  // Booking/Schedule is built and working but hidden from nav per the client's
+  // "remove booking for now" — the page, components, and API routes are all
+  // still intact, so re-enabling this is a one-line change.
+  // { href: '/juststudio/schedule', label: 'Schedule', icon: CalendarDays },
   { href: '/juststudio/services', label: 'Services', icon: Tags },
   { href: '/juststudio/inventory', label: 'Inventory', icon: Boxes },
   { href: '/juststudio/tasks', label: 'Tasks', icon: ListChecks },
+  { href: '/juststudio/work-schedule', label: 'Work Schedule', icon: CalendarClock },
 ];
 
 const SETTINGS_NAV = [

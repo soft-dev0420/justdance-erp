@@ -11,6 +11,7 @@ import type {
   OpeningHours,
   Role,
   Service,
+  ShiftDay,
   StockItem,
   Studio,
   StudioClient,
@@ -167,6 +168,28 @@ export const stockApi = {
   adjust: (id: string, body: { type: 'replenish' | 'use' | 'initial'; quantity: number; notes?: string }) =>
     request<StockItem>(`/stock/${id}/adjust`, { method: 'POST', body }),
   remove: (id: string) => request<void>(`/stock/${id}`, { method: 'DELETE' }),
+};
+
+export interface ShiftSlotInput {
+  employeeId: string;
+  startTime: string;
+  endTime: string;
+  shiftType: 'morning' | 'afternoon' | 'evening';
+}
+
+export interface CreateShiftDayInput {
+  date: string;
+  location?: string;
+  notes?: string;
+  slots: ShiftSlotInput[];
+}
+
+export const shiftsApi = {
+  list: () => request<ShiftDay[]>('/shifts'),
+  create: (body: CreateShiftDayInput) => request<ShiftDay>('/shifts', { method: 'POST', body }),
+  update: (id: string, body: Partial<CreateShiftDayInput> & { status?: ShiftDay['status'] }) =>
+    request<ShiftDay>(`/shifts/${id}`, { method: 'PATCH', body }),
+  remove: (id: string) => request<void>(`/shifts/${id}`, { method: 'DELETE' }),
 };
 
 export interface CreateTaskInput {
