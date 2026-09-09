@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 import { useAuth } from '@/context/auth-context';
 import { ApiError } from '@/lib/api-fetch';
-import { FACEBOOK_LOGIN_ENABLED } from '@/lib/feature-flags';
+import { APPLE_LOGIN_ENABLED, FACEBOOK_LOGIN_ENABLED } from '@/lib/feature-flags';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -119,13 +119,15 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <a
-            href={`${API_URL}/auth/apple`}
-            className="flex items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-black py-2.5 text-sm font-medium text-white transition hover:bg-gray-900"
-          >
-            <AppleGlyph />
-            Continue with Apple
-          </a>
+          {APPLE_LOGIN_ENABLED && (
+            <a
+              href={`${API_URL}/auth/apple`}
+              className="flex items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-black py-2.5 text-sm font-medium text-white transition hover:bg-gray-900"
+            >
+              <AppleGlyph />
+              Continue with Apple
+            </a>
+          )}
           <a
             href={`${API_URL}/auth/google`}
             className="flex items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-gray-50 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"

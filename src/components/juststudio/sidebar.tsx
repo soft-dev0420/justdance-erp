@@ -23,9 +23,12 @@ import { useAuth } from '@/context/auth-context';
 import { useStudio } from '@/context/studio-context';
 import { cn } from '@/lib/cn';
 
+// Ordered per client feedback: day-to-day sections (team, services,
+// inventory, tasks, work schedule) first since those matter most to a dance
+// studio's daily use, stats/CRM sections lower. Team also doubles as the
+// ERP's home page (see /juststudio/page.tsx's redirect) — this order isn't
+// just cosmetic, it's the same priority the redirect target reflects.
 const MAIN_NAV = [
-  { href: '/juststudio', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/juststudio/clients', label: 'Clients', icon: Users },
   { href: '/juststudio/team', label: 'Team', icon: UserSquare2 },
   // Booking/Schedule is built and working but hidden from nav per the client's
   // "remove booking for now" — the page, components, and API routes are all
@@ -35,6 +38,8 @@ const MAIN_NAV = [
   { href: '/juststudio/inventory', label: 'Inventory', icon: Boxes },
   { href: '/juststudio/tasks', label: 'Tasks', icon: ListChecks },
   { href: '/juststudio/work-schedule', label: 'Work Schedule', icon: CalendarClock },
+  { href: '/juststudio/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/juststudio/clients', label: 'Clients', icon: Users },
 ];
 
 const SETTINGS_NAV = [
@@ -57,7 +62,7 @@ export function Sidebar() {
   const { studio } = useStudio();
   const [collapsed, setCollapsed] = useState(false);
 
-  const isActive = (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href));
+  const isActive = (href: string) => pathname.startsWith(href);
 
   return (
     <aside
@@ -92,7 +97,7 @@ export function Sidebar() {
           {!collapsed && <p className="mb-3 px-3 text-xs font-medium uppercase tracking-wider text-zinc-600">Main</p>}
           <ul className="space-y-1">
             {MAIN_NAV.map((item) => {
-              const active = isActive(item.href, item.exact);
+              const active = isActive(item.href);
               const Icon = item.icon;
               return (
                 <li key={item.href}>
