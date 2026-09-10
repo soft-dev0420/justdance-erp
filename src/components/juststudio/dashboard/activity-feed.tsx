@@ -2,6 +2,8 @@
 
 import type { CSSProperties } from 'react';
 
+import { useLanguage } from '@/lib/i18n';
+
 import type { ActivityItem } from './dashboard-types';
 
 function ActivityIcon({ type }: { type: string }) {
@@ -48,14 +50,15 @@ interface Props {
 }
 
 export function ActivityFeed({ items, style }: Props) {
+  const { t } = useLanguage();
   return (
     <section className="flex flex-col rounded-2xl p-6 shadow-sm" style={{ ...style, height: 450 }}>
-      <h2 className="mb-4 text-lg font-semibold text-slate-800">Activity feed</h2>
+      <h2 className="mb-4 text-lg font-semibold text-slate-800">{t.activityFeedHeading}</h2>
       <div className="relative flex-1 overflow-y-auto pr-1">
         <div className="absolute top-2 bottom-2 left-3 w-px bg-slate-200" />
         <div className="relative z-10 space-y-6">
           {items.length === 0 ? (
-            <p className="py-4 text-center text-sm text-slate-400 italic">Nothing yet today.</p>
+            <p className="py-4 text-center text-sm text-slate-400 italic">{t.nothingYetToday}</p>
           ) : (
             items.map((item, i) => (
               <div key={i} className="relative flex gap-4">

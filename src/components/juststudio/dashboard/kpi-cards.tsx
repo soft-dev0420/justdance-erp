@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/lib/i18n';
+
 import { glass } from './dashboard-types';
 
 function DotsMenu() {
@@ -41,6 +43,7 @@ interface Props {
 }
 
 export function KpiCards({ isLoading, bookingCount, activeClients, revenue, utilPct, totalSlots, currency }: Props) {
+  const { t } = useLanguage();
   const dash = isLoading ? '—' : null;
 
   return (
@@ -48,7 +51,7 @@ export function KpiCards({ isLoading, bookingCount, activeClients, revenue, util
       {/* Today's bookings */}
       <div className="rounded-2xl p-5 transition-all hover:shadow-lg" style={glass}>
         <div className="mb-4 flex items-start justify-between">
-          <h3 className="text-sm font-medium text-slate-500">Today&apos;s bookings</h3>
+          <h3 className="text-sm font-medium text-slate-500">{t.todaysBookings}</h3>
           <DotsMenu />
         </div>
         <div className="flex items-end justify-between">
@@ -62,7 +65,7 @@ export function KpiCards({ isLoading, bookingCount, activeClients, revenue, util
       {/* Revenue */}
       <div className="rounded-2xl p-5 transition-all hover:shadow-lg" style={glass}>
         <div className="mb-4 flex items-start justify-between">
-          <h3 className="text-sm font-medium text-slate-500">Revenue today</h3>
+          <h3 className="text-sm font-medium text-slate-500">{t.revenueToday}</h3>
           <DotsMenu />
         </div>
         <div className="flex items-end justify-between">
@@ -78,7 +81,7 @@ export function KpiCards({ isLoading, bookingCount, activeClients, revenue, util
       {/* Active clients */}
       <div className="rounded-2xl p-5 transition-all hover:shadow-lg" style={glass}>
         <div className="mb-4 flex items-start justify-between">
-          <h3 className="text-sm font-medium text-slate-500">Active clients</h3>
+          <h3 className="text-sm font-medium text-slate-500">{t.activeClientsLabel}</h3>
           <DotsMenu />
         </div>
         <div className="flex items-end justify-between">
@@ -92,7 +95,7 @@ export function KpiCards({ isLoading, bookingCount, activeClients, revenue, util
       {/* Utilization */}
       <div className="rounded-2xl p-5 transition-all hover:shadow-lg" style={glass}>
         <div className="mb-4 flex items-start justify-between">
-          <h3 className="text-sm font-medium text-slate-500">Utilization</h3>
+          <h3 className="text-sm font-medium text-slate-500">{t.utilizationLabel}</h3>
           <DotsMenu />
         </div>
         <div className="flex items-end justify-between">
@@ -107,12 +110,12 @@ export function KpiCards({ isLoading, bookingCount, activeClients, revenue, util
       <div className="relative overflow-hidden rounded-2xl p-5 transition-all hover:shadow-lg" style={glass}>
         <div className="pointer-events-none absolute -right-4 -bottom-4 h-24 w-24 rounded-tl-full bg-accent-100 opacity-50" />
         <div className="relative z-10 mb-4 flex items-start justify-between">
-          <h3 className="text-sm font-medium text-slate-500">Available slots</h3>
+          <h3 className="text-sm font-medium text-slate-500">{t.availableSlots}</h3>
           <DotsMenu />
         </div>
         <div className="relative z-10 flex items-end justify-between">
           <span className="text-3xl font-bold text-slate-800">{dash ?? totalSlots}</span>
-          <span className="text-xs font-medium text-slate-500">Today</span>
+          <span className="text-xs font-medium text-slate-500">{t.today}</span>
         </div>
       </div>
     </section>

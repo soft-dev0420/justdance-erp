@@ -1,12 +1,19 @@
+import type { T } from '@/lib/i18n';
 import type { Employee } from '@/lib/types';
 
-export const STATUS_LABELS: Record<Employee['status'], string> = {
-  available: 'Available',
-  vacation: 'Vacation',
-  sick: 'Sick',
-  unavailable: 'Unavailable',
-  'off-duty': 'Off duty',
-};
+// A plain module-level object can't call useLanguage() itself — callers
+// (all components, which do have access to `t`) resolve the label through
+// this function instead of a static lookup table.
+export function statusLabel(status: Employee['status'], t: T): string {
+  const labels: Record<Employee['status'], string> = {
+    available: t.statusAvailable,
+    vacation: t.statusVacation,
+    sick: t.statusSick,
+    unavailable: t.statusUnavailable,
+    'off-duty': t.statusOffDuty,
+  };
+  return labels[status];
+}
 
 export const STATUS_BADGE_CLASS: Record<Employee['status'], string> = {
   available: 'bg-emerald-50 text-emerald-700 border-emerald-100',

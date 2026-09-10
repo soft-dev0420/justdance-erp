@@ -1,6 +1,9 @@
 import { AlertTriangle } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
+
 export function UnsavedBar({ roleName, onSave, onDiscard, isSaving }: { roleName: string; onSave: () => void; onDiscard: () => void; isSaving?: boolean }) {
+  const { t } = useLanguage();
   return (
     <div
       className="absolute bottom-6 left-1/2 z-30 w-[calc(100%-2rem)] max-w-[600px] -translate-x-1/2 rounded-2xl border border-white/30 bg-white/90 p-4 shadow-xl backdrop-blur-md"
@@ -12,20 +15,20 @@ export function UnsavedBar({ roleName, onSave, onDiscard, isSaving }: { roleName
             <AlertTriangle size={16} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">Unsaved changes</p>
-            <p className="text-xs text-gray-500">You have unsaved changes to &lsquo;{roleName}&rsquo;</p>
+            <p className="text-sm font-semibold text-gray-900">{t.unsavedChangesHeading}</p>
+            <p className="text-xs text-gray-500">{t.unsavedChangesSubtitle.replace('{value}', roleName)}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={onDiscard} className="px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">
-            Discard
+            {t.discardLabel}
           </button>
           <button
             onClick={onSave}
             disabled={isSaving}
             className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSaving ? 'Saving…' : 'Save changes'}
+            {isSaving ? t.saving : t.saveChangesLabel}
           </button>
         </div>
       </div>

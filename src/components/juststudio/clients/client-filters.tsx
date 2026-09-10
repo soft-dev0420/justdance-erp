@@ -3,17 +3,9 @@
 import { ArrowUpDown, Check, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { STATUS_LABELS } from './types';
+import { useLanguage } from '@/lib/i18n';
 
-const FILTERS = [{ label: 'All clients', value: 'all' }, ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ label, value }))];
-
-const SORT_OPTIONS = [
-  { label: 'Newest first', value: 'newest' },
-  { label: 'Oldest first', value: 'oldest' },
-  { label: 'Name A–Z', value: 'name-asc' },
-  { label: 'Name Z–A', value: 'name-desc' },
-  { label: 'Most visits', value: 'visits' },
-];
+import { clientStatusLabel, CLIENT_STATUSES } from './types';
 
 export function ClientFilters({
   statusFilter,
@@ -30,10 +22,19 @@ export function ClientFilters({
   sortBy: string;
   setSortBy: (v: string) => void;
 }) {
+  const { t } = useLanguage();
+  const FILTERS = [{ label: t.statusAllClients, value: 'all' }, ...CLIENT_STATUSES.map((value) => ({ label: clientStatusLabel(value, t), value }))];
+  const SORT_OPTIONS = [
+    { label: t.sortNewestFirst, value: 'newest' },
+    { label: t.sortOldestFirst, value: 'oldest' },
+    { label: t.sortNameAZ, value: 'name-asc' },
+    { label: t.sortNameZA, value: 'name-desc' },
+    { label: t.sortMostVisits, value: 'visits' },
+  ];
   const [sortOpen, setSortOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
   const hasClear = statusFilter !== 'all' || searchQuery !== '';
-  const sortLabel = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Sort';
+  const sortLabel = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? t.sortDefaultLabel;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -51,7 +52,7 @@ export function ClientFilters({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by name or email"
+          placeholder={t.searchByNameOrEmail}
           className="w-full rounded-xl border border-gray-200 bg-white py-2 pr-4 pl-10 text-sm shadow-sm outline-none transition-all focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
         />
       </div>
@@ -83,7 +84,7 @@ export function ClientFilters({
               }}
               className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50"
             >
-              Clear
+              {t.clear}
             </button>
           )}
 

@@ -14,9 +14,11 @@ import { Input, Label } from '@/components/juststudio/ui/input';
 import { Modal } from '@/components/juststudio/ui/modal';
 import { catalogApi, studioApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
+import { useLanguage } from '@/lib/i18n';
 import type { Category, Service } from '@/lib/types';
 
 export default function ServicesPage() {
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [currency, setCurrency] = useState('USD');
   const [loading, setLoading] = useState(true);
@@ -31,8 +33,9 @@ export default function ServicesPage() {
 
   useEffect(() => {
     Promise.all([load(), studioApi.me().then((s) => setCurrency(s.currency ?? 'USD'))])
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Failed to load services'))
+      .catch((err) => toast.error(err instanceof ApiError ? err.message : t.failedToLoadServices))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onAddCategory = async () => {
@@ -40,45 +43,45 @@ export default function ServicesPage() {
     setSubmitting(true);
     try {
       await catalogApi.createCategory(categoryName.trim());
-      toast.success('Category added');
+      toast.success(t.categoryAdded);
       setCategoryModalOpen(false);
       setCategoryName('');
       load();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to add category');
+      toast.error(err instanceof ApiError ? err.message : t.failedToAddCategory);
     } finally {
       setSubmitting(false);
     }
   };
 
   const onDeleteCategory = async (category: Category) => {
-    if (!confirm(`Delete "${category.category}" and all its services?`)) return;
+    if (!confirm(t.confirmDeleteCategory.replace('{value}', category.category))) return;
     try {
       await catalogApi.removeCategory(category.id);
       load();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to delete category');
+      toast.error(err instanceof ApiError ? err.message : t.failedToDeleteCategory);
     }
   };
 
   const onDeleteService = async (service: Service) => {
-    if (!confirm(`Delete "${service.name}"?`)) return;
+    if (!confirm(t.confirmDeleteService.replace('{value}', service.name))) return;
     try {
       await catalogApi.removeService(service.id);
       load();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to delete service');
+      toast.error(err instanceof ApiError ? err.message : t.failedToDeleteService);
     }
   };
 
   return (
     <div>
       <PageHeader
-        title="Services"
-        description="Your priced offerings, organized by category — pulled into Schedule when booking."
+        title={t.navServices}
+        description={t.servicesPageDescription}
         action={
           <Button onClick={() => setCategoryModalOpen(true)}>
-            <Plus size={16} /> Add category
+            <Plus size={16} /> {t.addCategory}
           </Button>
         }
       />
@@ -89,7 +92,7 @@ export default function ServicesPage() {
             <Loader2 className="animate-spin text-accent-500" size={24} />
           </div>
         ) : categories.length === 0 ? (
-          <EmptyState icon={Tags} title="No categories yet" description="Add a category (e.g. Private Lessons) to start listing priced services." />
+          <EmptyState icon={Tags} title={t.noCategoriesYet} description={t.addCategoryHint} />
         ) : (
           <>
             <ServiceStats categories={categories} currency={currency} />
@@ -109,14 +112,14 @@ export default function ServicesPage() {
         )}
       </div>
 
-      <Modal open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} title="Add category">
+      <Modal open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} title={t.addCategory}>
         <div className="flex flex-col gap-4">
           <div>
-            <Label>Category name</Label>
-            <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Private Lessons" />
+            <Label>{t.categoryNameLabel}</Label>
+            <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder={t.categoryNamePlaceholder} />
           </div>
           <Button onClick={() => void onAddCategory()} disabled={submitting || !categoryName.trim()}>
-            {submitting ? 'Adding…' : 'Add category'}
+            {submitting ? t.adding : t.addCategory}
           </Button>
         </div>
       </Modal>

@@ -4,6 +4,7 @@ import { Calendar, Clock, MapPin, Plus, Trash2, X } from 'lucide-react';
 import { type FormEvent, useEffect, useState } from 'react';
 
 import type { CreateShiftDayInput, ShiftSlotInput } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 import type { Employee, ShiftDay } from '@/lib/types';
 
 import { toDateStr } from './types';
@@ -27,6 +28,7 @@ export function ShiftFormModal({
   isLoading: boolean;
   employees: Employee[];
 }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState<CreateShiftDayInput & { status: ShiftDay['status'] }>({
     date: selectedDate ? toDateStr(selectedDate) : '',
     location: '',
@@ -65,11 +67,11 @@ export function ShiftFormModal({
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!form.date) errs.date = 'Date is required';
+    if (!form.date) errs.date = t.dateRequired;
     form.slots.forEach((s, i) => {
-      if (!s.employeeId) errs[`employee_${i}`] = 'Required';
-      if (!s.startTime) errs[`start_${i}`] = 'Required';
-      if (!s.endTime) errs[`end_${i}`] = 'Required';
+      if (!s.employeeId) errs[`employee_${i}`] = t.requiredField;
+      if (!s.startTime) errs[`start_${i}`] = t.requiredField;
+      if (!s.endTime) errs[`end_${i}`] = t.requiredField;
     });
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -94,8 +96,8 @@ export function ShiftFormModal({
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{isEditing ? 'Edit Shift' : 'Add Shift'}</h2>
-              <p className="text-sm text-gray-500">Schedule staff for a work day</p>
+              <h2 className="text-xl font-bold text-gray-900">{isEditing ? t.editShift : t.addShift}</h2>
+              <p className="text-sm text-gray-500">{t.scheduleStaffForWorkDay}</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-full p-2 transition-colors hover:bg-gray-100">
@@ -106,7 +108,7 @@ export function ShiftFormModal({
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Date *</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t.dateStar}</label>
               <input
                 type="date"
                 value={form.date}
@@ -117,51 +119,51 @@ export function ShiftFormModal({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Location</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t.locationLabel}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   value={form.location}
                   onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
-                  placeholder="e.g. Studio A, Main hall"
+                  placeholder={t.locationPlaceholder}
                   className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-transparent focus:ring-2 focus:ring-accent-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t.notesLabel}</label>
               <textarea
                 value={form.notes}
                 onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                 rows={2}
-                placeholder="Any additional notes for this day…"
+                placeholder={t.notesForDayPlaceholder}
                 className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-accent-500"
               />
             </div>
 
             {isEditing && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">{t.statusFieldLabel}</label>
                 <select
                   value={form.status}
                   onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as ShiftDay['status'] }))}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-accent-500"
                 >
-                  <option value="scheduled">Scheduled</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="scheduled">{t.shiftStatusScheduled}</option>
+                  <option value="completed">{t.taskStatusCompleted}</option>
+                  <option value="cancelled">{t.shiftStatusCancelled}</option>
                 </select>
               </div>
             )}
 
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <label className="block text-sm font-medium text-gray-700">Staff shifts *</label>
+                <label className="block text-sm font-medium text-gray-700">{t.staffShiftsStar}</label>
                 <button type="button" onClick={addSlot} className="flex items-center gap-1 text-xs font-medium text-accent-600 hover:text-accent-700">
                   <Plus className="h-3.5 w-3.5" />
-                  Add slot
+                  {t.addSlot}
                 </button>
               </div>
 
@@ -169,13 +171,13 @@ export function ShiftFormModal({
                 {form.slots.map((slot, i) => (
                   <div key={i} className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
                     <div>
-                      <label className="text-xs font-medium text-gray-500">Staff member *</label>
+                      <label className="text-xs font-medium text-gray-500">{t.staffMemberStar}</label>
                       <select
                         value={slot.employeeId}
                         onChange={(e) => updateSlot(i, { employeeId: e.target.value })}
                         className={`mt-0.5 w-full rounded-md border px-2 py-1.5 text-sm focus:border-transparent focus:ring-1 focus:ring-accent-500 ${errors[`employee_${i}`] ? 'border-red-400' : 'border-gray-300'}`}
                       >
-                        <option value="">Select…</option>
+                        <option value="">{t.selectEllipsis}</option>
                         {employees.map((emp) => (
                           <option key={emp.id} value={emp.id}>
                             {emp.name}
@@ -185,7 +187,7 @@ export function ShiftFormModal({
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-xs font-medium text-gray-500">Start *</label>
+                        <label className="text-xs font-medium text-gray-500">{t.startStar}</label>
                         <div className="relative mt-0.5">
                           <Clock className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                           <input
@@ -197,7 +199,7 @@ export function ShiftFormModal({
                         </div>
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-gray-500">End *</label>
+                        <label className="text-xs font-medium text-gray-500">{t.endStar}</label>
                         <div className="relative mt-0.5">
                           <Clock className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                           <input
@@ -210,21 +212,21 @@ export function ShiftFormModal({
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-gray-500">Shift type</label>
+                      <label className="text-xs font-medium text-gray-500">{t.shiftTypeLabel}</label>
                       <select
                         value={slot.shiftType}
                         onChange={(e) => updateSlot(i, { shiftType: e.target.value as ShiftSlotInput['shiftType'] })}
                         className="mt-0.5 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-transparent focus:ring-1 focus:ring-accent-500"
                       >
-                        <option value="morning">Morning</option>
-                        <option value="afternoon">Afternoon</option>
-                        <option value="evening">Evening</option>
+                        <option value="morning">{t.morningLabel}</option>
+                        <option value="afternoon">{t.afternoonLabel}</option>
+                        <option value="evening">{t.eveningLabel}</option>
                       </select>
                     </div>
                     {form.slots.length > 1 && (
                       <button type="button" onClick={() => removeSlot(i)} className="mt-1 flex items-center gap-1 text-xs text-red-500 hover:text-red-600">
                         <Trash2 className="h-3 w-3" />
-                        Remove slot
+                        {t.removeSlot}
                       </button>
                     )}
                   </div>
@@ -235,7 +237,7 @@ export function ShiftFormModal({
 
           <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-gray-50 p-4 md:p-6">
             <button type="button" onClick={onClose} disabled={isLoading} className="rounded-lg border border-gray-300 px-4 py-2 transition-colors hover:bg-gray-50 disabled:opacity-50">
-              Cancel
+              {t.cancel}
             </button>
             <button
               type="submit"
@@ -243,7 +245,7 @@ export function ShiftFormModal({
               className="flex items-center gap-2 rounded-lg bg-accent-500 px-4 py-2 text-white transition-colors hover:bg-accent-600 disabled:opacity-50"
             >
               {isLoading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-              {isEditing ? 'Update Shift' : 'Create Shift'}
+              {isEditing ? t.updateShift : t.createShift}
             </button>
           </div>
         </form>

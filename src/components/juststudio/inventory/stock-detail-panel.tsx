@@ -3,12 +3,12 @@
 import { ArrowDown, ArrowUp, Boxes, Minus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { useLanguage, type T } from '@/lib/i18n';
 import type { StockItem } from '@/lib/types';
 
 import {
   STATUS_BADGE,
   STATUS_COLOR,
-  STATUS_LABEL,
   formatHistoryDate,
   getCategoryColor,
   getDailyUsage,
@@ -17,6 +17,7 @@ import {
   getStockProgress,
   getStockStatus,
   getSuggestedOrderQty,
+  statusLabel,
 } from './types';
 
 type Tab = 'overview' | 'movements';
@@ -33,10 +34,10 @@ function historyIcon(type: string) {
   return <Boxes size={14} />;
 }
 
-function historyLabel(type: string) {
-  if (type === 'use') return 'Used';
-  if (type === 'replenish') return 'Restocked';
-  return 'Initial stock';
+function historyLabel(type: string, t: T) {
+  if (type === 'use') return t.usedLabel;
+  if (type === 'replenish') return t.restockedLabel;
+  return t.initialStockLabel;
 }
 
 export function StockDetailPanel({
@@ -54,6 +55,7 @@ export function StockDetailPanel({
   onEdit: (item: StockItem) => void;
   onDelete: (item: StockItem) => void;
 }) {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('overview');
 
   useEffect(() => {
@@ -84,7 +86,7 @@ export function StockDetailPanel({
             <div className="mb-1 flex items-start justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider capitalize ${catCls}`}>{item.category}</span>
-                <span className={`rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${STATUS_BADGE[status]}`}>{STATUS_LABEL[status]}</span>
+                <span className={`rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${STATUS_BADGE[status]}`}>{statusLabel(status, t)}</span>
               </div>
               <button onClick={onClose} className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200">
                 <X size={16} />
@@ -97,15 +99,15 @@ export function StockDetailPanel({
           </div>
 
           <div className="flex shrink-0 gap-5 border-b border-gray-100 bg-white px-6">
-            {(['overview', 'movements'] as Tab[]).map((t) => (
+            {(['overview', 'movements'] as Tab[]).map((tabKey) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`-mb-px border-b-2 py-3 text-sm font-medium capitalize transition-colors ${
-                  tab === t ? 'border-accent-600 text-accent-600' : 'border-transparent text-gray-500 hover:text-gray-800'
+                key={tabKey}
+                onClick={() => setTab(tabKey)}
+                className={`-mb-px border-b-2 py-3 text-sm font-medium transition-colors ${
+                  tab === tabKey ? 'border-accent-600 text-accent-600' : 'border-transparent text-gray-500 hover:text-gray-800'
                 }`}
               >
-                {t}
+                {tabKey === 'overview' ? t.overviewTab : t.movementsTab}
               </button>
             ))}
           </div>
@@ -115,20 +117,20 @@ export function StockDetailPanel({
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Current stock</div>
+                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{t.currentStockLabel}</div>
                     <div className="text-3xl font-bold text-gray-900">{item.currentStock}</div>
                     <div className="mt-0.5 text-xs text-gray-500">{item.unit}</div>
                   </div>
                   <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Minimum level</div>
+                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{t.minimumLevelCard}</div>
                     <div className="text-3xl font-bold text-gray-900">{item.minStock}</div>
-                    <div className={`mt-0.5 text-xs font-medium ${STATUS_COLOR[status]}`}>{STATUS_LABEL[status]}</div>
+                    <div className={`mt-0.5 text-xs font-medium ${STATUS_COLOR[status]}`}>{statusLabel(status, t)}</div>
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                   <div className="mb-2 flex justify-between text-xs">
-                    <span className="font-medium text-gray-700">Stock level</span>
+                    <span className="font-medium text-gray-700">{t.colStockLevel}</span>
                     <span className={`font-semibold ${STATUS_COLOR[status]}`}>{pct}%</span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-gray-100">
@@ -143,30 +145,34 @@ export function StockDetailPanel({
 
                 {item.description && (
                   <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Description</div>
+                    <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{t.descriptionLabel}</div>
                     <p className="text-sm leading-relaxed text-gray-700">{item.description}</p>
                   </div>
                 )}
 
                 {status !== 'in-stock' && (suggestedQty !== null || daysLeft !== null) && (
                   <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Reorder</div>
+                    <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{t.reorderLabel}</div>
                     {suggestedQty !== null && (
                       <p className="text-sm text-gray-700">
-                        Order <span className="font-semibold text-gray-900">{suggestedQty}</span> {item.unit}
-                        {item.parLevel ? ` to reach ${item.parLevel}` : ''}
+                        {t.orderPrefix} <span className="font-semibold text-gray-900">{suggestedQty}</span> {item.unit}
+                        {item.parLevel ? ` ${t.toReach.replace('{value}', String(item.parLevel))}` : ''}
                       </p>
                     )}
-                    {daysLeft !== null && <p className="mt-1 text-xs text-gray-500">{daysLeft <= 0 ? 'Out now, at current usage' : `~${daysLeft} days remaining at current usage`}</p>}
+                    {daysLeft !== null && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        {daysLeft <= 0 ? t.outNowAtCurrentUsage : t.daysRemainingAtUsage.replace('{value}', String(daysLeft))}
+                      </p>
+                    )}
                   </div>
                 )}
 
                 {sorted.length > 0 && (
                   <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                     <div className="mb-3 flex items-center justify-between">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Recent activity</div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{t.recentActivity}</div>
                       <button onClick={() => setTab('movements')} className="text-xs font-medium text-accent-600 hover:text-accent-700">
-                        View all
+                        {t.viewAll}
                       </button>
                     </div>
                     <div className="space-y-2">
@@ -174,7 +180,7 @@ export function StockDetailPanel({
                         <div key={entry.id} className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2">
                             <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${HISTORY_STYLE[entry.type] ?? 'bg-gray-50 text-gray-600'}`}>{historyIcon(entry.type)}</span>
-                            <span className="text-gray-700">{historyLabel(entry.type)}</span>
+                            <span className="text-gray-700">{historyLabel(entry.type, t)}</span>
                           </div>
                           <span className={`font-semibold ${entry.type === 'use' ? 'text-red-600' : 'text-emerald-600'}`}>
                             {entry.type === 'use' ? '-' : '+'}
@@ -191,18 +197,18 @@ export function StockDetailPanel({
             {tab === 'movements' && (
               <div className="space-y-3">
                 {sorted.length === 0 ? (
-                  <div className="py-10 text-center text-sm text-gray-400">No movement history</div>
+                  <div className="py-10 text-center text-sm text-gray-400">{t.noMovementHistory}</div>
                 ) : (
                   sorted.map((entry) => (
                     <div key={entry.id} className={`rounded-xl border p-4 ${HISTORY_STYLE[entry.type] ?? 'border-gray-100 bg-gray-50'}`}>
                       <div className="mb-1.5 flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <span className="shrink-0">{historyIcon(entry.type)}</span>
-                          <span className="text-sm font-semibold">{historyLabel(entry.type)}</span>
+                          <span className="text-sm font-semibold">{historyLabel(entry.type, t)}</span>
                         </div>
                         <div className="text-right">
                           <div className="text-xs opacity-70">{formatHistoryDate(entry.createdAt)}</div>
-                          {entry.updatedBy && <div className="mt-0.5 text-[10px] opacity-50">by {entry.updatedBy}</div>}
+                          {entry.updatedBy && <div className="mt-0.5 text-[10px] opacity-50">{t.byPrefix} {entry.updatedBy}</div>}
                         </div>
                       </div>
                       <div className="text-lg font-bold">
@@ -221,7 +227,7 @@ export function StockDetailPanel({
         <div className="flex w-20 shrink-0 flex-col items-center gap-3 border-l border-gray-200 bg-gray-50/80 py-6">
           <button
             onClick={() => onAddStock(item)}
-            title="Add stock"
+            title={t.addStockTitle}
             className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-500 text-white shadow-md shadow-accent-200/50 transition-colors hover:bg-accent-600"
           >
             <Plus size={20} />
@@ -231,7 +237,7 @@ export function StockDetailPanel({
 
           <button
             onClick={() => onUseStock(item)}
-            title="Use / reduce stock"
+            title={t.useReduceStockTitle}
             className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:border-accent-400 hover:text-accent-600"
           >
             <Minus size={20} />
@@ -239,7 +245,7 @@ export function StockDetailPanel({
 
           <button
             onClick={() => onEdit(item)}
-            title="Edit product"
+            title={t.editProduct}
             className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:border-accent-400 hover:text-accent-600"
           >
             <Pencil size={18} />
@@ -248,7 +254,7 @@ export function StockDetailPanel({
           <div className="mt-auto">
             <button
               onClick={() => onDelete(item)}
-              title="Delete product"
+              title={t.deleteProductTitle}
               className="flex h-12 w-12 items-center justify-center rounded-xl border border-red-100 bg-white text-red-400 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
             >
               <Trash2 size={18} />

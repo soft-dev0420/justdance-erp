@@ -1,5 +1,6 @@
 import { Lock, Plus, Search } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
 import type { Role } from '@/lib/types';
 
 export function RoleList({
@@ -19,6 +20,7 @@ export function RoleList({
   onSearchChange: (q: string) => void;
   onCreateRole: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="flex h-full w-full shrink-0 flex-col border-r border-gray-100 bg-white">
       <div className="border-b border-gray-100 p-5">
@@ -28,7 +30,7 @@ export function RoleList({
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search roles…"
+            placeholder={t.searchRolesPlaceholder}
             className="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-10 text-sm outline-none transition-all focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
           />
           <button onClick={onCreateRole} className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-accent-500 text-white transition-colors hover:bg-accent-600">
@@ -46,7 +48,7 @@ export function RoleList({
             </div>
           ))
         ) : roles.length === 0 ? (
-          <p className="py-6 text-center text-sm text-gray-500">No roles found</p>
+          <p className="py-6 text-center text-sm text-gray-500">{t.noRolesFound}</p>
         ) : (
           roles.map((role) => {
             const locked = role.name === 'owner';
@@ -72,7 +74,7 @@ export function RoleList({
                   <p className={`mt-1 text-xs ${isSelected && !locked ? 'text-accent-600' : 'text-gray-500'}`}>{role.description}</p>
                 </div>
                 <span className={`whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${isSelected && !locked ? 'bg-accent-500 text-white shadow-sm' : 'border border-gray-100 bg-gray-50 text-gray-500'}`}>
-                  {role.userCount} {role.userCount === 1 ? 'user' : 'users'}
+                  {role.userCount} {role.userCount === 1 ? t.userSingular : t.userPlural}
                 </span>
               </div>
             );

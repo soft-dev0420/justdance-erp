@@ -3,9 +3,10 @@
 import { Calendar, Check, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { LOCALE_TAG, useLanguage } from '@/lib/i18n';
 import type { Task } from '@/lib/types';
 
-import { CATEGORY_TAG, PRIORITY_BADGE, STATUS_BADGE, TASK_PRIORITY_LABEL, TASK_STATUS_LABEL, formatDue, getInitials, type Staff } from './types';
+import { CATEGORY_TAG, PRIORITY_BADGE, STATUS_BADGE, formatDue, getInitials, taskPriorityLabel, taskStatusLabel, type Staff } from './types';
 
 export function TaskDetailPanel({
   task,
@@ -22,6 +23,7 @@ export function TaskDetailPanel({
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
 }) {
+  const { t, lang } = useLanguage();
   const [pendingDelete, setPendingDelete] = useState(false);
 
   const assignees = staff.filter((s) => (task.assignees ?? []).includes(s.id));
@@ -43,7 +45,7 @@ export function TaskDetailPanel({
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-5">
           <span className="font-mono text-xs font-medium text-gray-400">{task.id.slice(0, 8).toUpperCase()}</span>
           <div className="flex items-center gap-1">
-            <button onClick={() => onEdit(task)} title="Edit task" className="flex h-8 w-8 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">
+            <button onClick={() => onEdit(task)} title={t.editTask} className="flex h-8 w-8 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">
               <Pencil size={16} />
             </button>
             <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">
@@ -57,31 +59,31 @@ export function TaskDetailPanel({
             <h2 className="text-xl font-bold leading-tight text-gray-900">{task.title}</h2>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${STATUS_BADGE[task.status]}`}>{TASK_STATUS_LABEL[task.status]}</span>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${PRIORITY_BADGE[task.priority]}`}>{TASK_PRIORITY_LABEL[task.priority]}</span>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${STATUS_BADGE[task.status]}`}>{taskStatusLabel(task.status, t)}</span>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${PRIORITY_BADGE[task.priority]}`}>{taskPriorityLabel(task.priority, t)}</span>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${CATEGORY_TAG[task.category] ?? 'bg-gray-100 text-gray-600'}`}>{task.category}</span>
               {task.dueDate && (
                 <span className="flex items-center gap-1 text-xs font-medium text-gray-500">
                   <Calendar size={14} />
-                  {formatDue(task.dueDate, task.dueTime)}
+                  {formatDue(task.dueDate, task.dueTime, t.today, LOCALE_TAG[lang])}
                 </span>
               )}
             </div>
 
             <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-900">Description</h4>
-              <p className="text-sm leading-relaxed text-gray-600">{task.description || 'No description'}</p>
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-900">{t.descriptionLabel}</h4>
+              <p className="text-sm leading-relaxed text-gray-600">{task.description || t.noDescription}</p>
             </div>
 
             {task.notes && (
               <div>
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-900">Notes</h4>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-900">{t.notesLabel}</h4>
                 <p className="text-sm leading-relaxed text-gray-600">{task.notes}</p>
               </div>
             )}
 
             <div className="space-y-2 rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <h4 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Assigned to</h4>
+              <h4 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{t.assignedTo}</h4>
               {assignees.length > 0 ? (
                 assignees.map((assignee) => (
                   <div key={assignee.id} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-2.5 shadow-sm">
@@ -95,7 +97,7 @@ export function TaskDetailPanel({
               ) : (
                 <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-2.5 shadow-sm">
                   <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200" />
-                  <p className="text-sm text-gray-400">Unassigned</p>
+                  <p className="text-sm text-gray-400">{t.unassigned}</p>
                 </div>
               )}
             </div>
@@ -103,25 +105,25 @@ export function TaskDetailPanel({
 
           <div className="flex w-11 shrink-0 flex-col items-center gap-3 border-l border-gray-100 py-1 pl-3">
             {nextStatus ? (
-              <button onClick={() => onStatusChange(task.id, nextStatus)} title={nextStatus === 'in-progress' ? 'Start task' : 'Mark complete'} className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-50 text-accent-600 transition-colors hover:bg-accent-100">
+              <button onClick={() => onStatusChange(task.id, nextStatus)} title={nextStatus === 'in-progress' ? t.startTask : t.markComplete} className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-50 text-accent-600 transition-colors hover:bg-accent-100">
                 <Check size={16} />
               </button>
             ) : (
-              <button onClick={() => onStatusChange(task.id, 'pending')} title="Reopen task" className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100">
+              <button onClick={() => onStatusChange(task.id, 'pending')} title={t.reopenTask} className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100">
                 <RotateCcw size={16} />
               </button>
             )}
 
             <div className="h-px w-6 bg-gray-100" />
 
-            <button onClick={() => onEdit(task)} title="Edit task" className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100">
+            <button onClick={() => onEdit(task)} title={t.editTask} className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100">
               <Pencil size={16} />
             </button>
 
             <button
               onClick={handleDelete}
               onBlur={() => setPendingDelete(false)}
-              title={pendingDelete ? 'Tap again to confirm' : 'Delete task'}
+              title={pendingDelete ? t.tapAgainToConfirm : t.deleteTask}
               className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${pendingDelete ? 'bg-red-500 text-white' : 'bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
             >
               <Trash2 size={16} />

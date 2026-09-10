@@ -1,3 +1,4 @@
+import type { T } from '@/lib/i18n';
 import type { StockHistoryEntry } from '@/lib/types';
 
 export const CATEGORIES = ['costumes', 'footwear', 'equipment', 'flooring & props', 'sound & av', 'hygiene', 'merchandise', 'other'];
@@ -25,11 +26,17 @@ export function getProgressColor(pct: number): string {
   return 'bg-emerald-500';
 }
 
-export const STATUS_LABEL: Record<StockStatus, string> = {
-  'in-stock': 'Healthy',
-  'low-stock': 'Low stock',
-  'out-of-stock': 'Out of stock',
-};
+// A plain module-level object can't call useLanguage() itself — callers
+// (all of which do have access to `t`) resolve the label through this
+// function instead of a static lookup table.
+export function statusLabel(status: StockStatus, t: T): string {
+  const labels: Record<StockStatus, string> = {
+    'in-stock': t.statusHealthy,
+    'low-stock': t.statusLowStock,
+    'out-of-stock': t.statusOutOfStock,
+  };
+  return labels[status];
+}
 
 export const STATUS_COLOR: Record<StockStatus, string> = {
   'in-stock': 'text-emerald-600',

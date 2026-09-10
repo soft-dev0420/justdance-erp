@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/lib/i18n';
+
 import { glass } from './dashboard-types';
 
 interface Props {
@@ -8,15 +10,16 @@ interface Props {
 }
 
 export function ClientInsights({ isLoading, data }: Props) {
+  const { t } = useLanguage();
   const items = [
-    { label: 'New clients', sub: 'Today', value: data.newClients, iconBg: 'bg-blue-100', iconClr: 'text-blue-600', icon: 'plus' as const },
-    { label: 'Returning', sub: 'Today', value: data.returning, iconBg: 'bg-accent-100', iconClr: 'text-accent-600', icon: 'return' as const },
-    { label: 'High value', sub: 'Today', value: data.highValue, iconBg: 'bg-amber-100', iconClr: 'text-amber-600', icon: 'star' as const },
+    { label: t.newClientsLabel, sub: t.today, value: data.newClients, iconBg: 'bg-blue-100', iconClr: 'text-blue-600', icon: 'plus' as const },
+    { label: t.returningLabel, sub: t.today, value: data.returning, iconBg: 'bg-accent-100', iconClr: 'text-accent-600', icon: 'return' as const },
+    { label: t.highValueLabel, sub: t.today, value: data.highValue, iconBg: 'bg-amber-100', iconClr: 'text-amber-600', icon: 'star' as const },
   ];
 
   return (
     <section className="rounded-2xl p-6 shadow-sm" style={glass}>
-      <h2 className="mb-4 text-lg font-semibold text-slate-800">Client insights</h2>
+      <h2 className="mb-4 text-lg font-semibold text-slate-800">{t.clientInsightsHeading}</h2>
       <div className="space-y-3">
         {items.map((item) => (
           <div key={item.label} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3">

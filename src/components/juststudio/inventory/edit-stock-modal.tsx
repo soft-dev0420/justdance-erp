@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 import { stockApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
+import { useLanguage } from '@/lib/i18n';
 import type { StockItem } from '@/lib/types';
 
 import { CATEGORIES, UNITS } from './types';
@@ -31,6 +32,7 @@ const inputCls =
 const labelCls = 'block text-sm font-medium text-gray-700';
 
 export function EditStockModal({ product, onClose, onUpdate }: { product: StockItem; onClose: () => void; onUpdate: (updated: StockItem) => void }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState<FormData>({
     name: product.name,
     category: product.category,
@@ -50,9 +52,9 @@ export function EditStockModal({ product, onClose, onUpdate }: { product: StockI
 
   const validate = (): FormErrors => {
     const err: FormErrors = {};
-    if (!form.name.trim()) err.name = 'Name is required';
-    if (!form.category) err.category = 'Category is required';
-    if (!form.unit) err.unit = 'Unit is required';
+    if (!form.name.trim()) err.name = t.nameRequired;
+    if (!form.category) err.category = t.categoryRequired;
+    if (!form.unit) err.unit = t.unitRequired;
     return err;
   };
 
@@ -73,10 +75,10 @@ export function EditStockModal({ product, onClose, onUpdate }: { product: StockI
         description: form.description || undefined,
         sku: form.sku || undefined,
       });
-      toast.success('Details updated');
+      toast.success(t.detailsUpdated);
       onUpdate(updated);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to update details');
+      toast.error(err instanceof ApiError ? err.message : t.failedToUpdateDetails);
     } finally {
       setLoading(false);
     }
@@ -96,7 +98,7 @@ export function EditStockModal({ product, onClose, onUpdate }: { product: StockI
                   <Pencil size={16} className="text-accent-600" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900">Edit product</h3>
+                  <h3 className="text-base font-semibold text-gray-900">{t.editProduct}</h3>
                   <p className="mt-0.5 max-w-[280px] truncate text-xs text-gray-500">{product.name}</p>
                 </div>
               </div>
@@ -107,16 +109,16 @@ export function EditStockModal({ product, onClose, onUpdate }: { product: StockI
 
             <div className="max-h-[65vh] space-y-4 overflow-y-auto px-6 py-5">
               <div>
-                <label className={labelCls}>Name *</label>
+                <label className={labelCls}>{t.nameStar}</label>
                 <input type="text" name="name" value={form.name} onChange={handleChange} className={inputCls} />
                 {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Category *</label>
+                  <label className={labelCls}>{t.categoryStar}</label>
                   <select name="category" value={form.category} onChange={handleChange} className={inputCls}>
-                    <option value="">Select…</option>
+                    <option value="">{t.selectEllipsis}</option>
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c} className="capitalize">
                         {c.charAt(0).toUpperCase() + c.slice(1)}
@@ -126,9 +128,9 @@ export function EditStockModal({ product, onClose, onUpdate }: { product: StockI
                   {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
                 </div>
                 <div>
-                  <label className={labelCls}>Unit *</label>
+                  <label className={labelCls}>{t.unitStar}</label>
                   <select name="unit" value={form.unit} onChange={handleChange} className={inputCls}>
-                    <option value="">Select…</option>
+                    <option value="">{t.selectEllipsis}</option>
                     {UNITS.map((u) => (
                       <option key={u} value={u} className="capitalize">
                         {u.charAt(0).toUpperCase() + u.slice(1)}
@@ -141,47 +143,47 @@ export function EditStockModal({ product, onClose, onUpdate }: { product: StockI
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Current stock</label>
+                  <label className={labelCls}>{t.currentStockLabel}</label>
                   <input type="number" value={product.currentStock} disabled className={`${inputCls} cursor-not-allowed bg-gray-50 text-gray-500`} />
-                  <p className="mt-1 text-[10px] text-gray-400">Change via update stock</p>
+                  <p className="mt-1 text-[10px] text-gray-400">{t.changeViaUpdateStockHint}</p>
                 </div>
                 <div>
-                  <label className={labelCls}>Minimum</label>
+                  <label className={labelCls}>{t.minimumLabel}</label>
                   <input type="number" name="minStock" min="0" value={form.minStock} onChange={handleChange} className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>Par level</label>
+                  <label className={labelCls}>{t.parLevelLabel}</label>
                   <input type="number" name="parLevel" min="0" value={form.parLevel} onChange={handleChange} className={inputCls} />
                 </div>
               </div>
 
               {willBeLow && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                  <p className="text-xs text-amber-700">This threshold will immediately flag the item as low stock.</p>
+                  <p className="text-xs text-amber-700">{t.thresholdWillFlagHint}</p>
                 </div>
               )}
 
               <div>
-                <label className={labelCls}>SKU</label>
+                <label className={labelCls}>{t.skuLabel}</label>
                 <input type="text" name="sku" value={form.sku} onChange={handleChange} className={inputCls} />
               </div>
 
               <div>
-                <label className={labelCls}>Description</label>
+                <label className={labelCls}>{t.descriptionLabel}</label>
                 <textarea name="description" rows={2} value={form.description} onChange={handleChange} className={inputCls} />
               </div>
             </div>
 
             <div className="flex justify-end gap-2 rounded-b-2xl border-t border-gray-100 bg-gray-50 px-6 py-4">
               <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
-                Cancel
+                {t.cancel}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className={`rounded-lg bg-accent-500 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-600 ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
               >
-                {loading ? 'Saving…' : 'Save changes'}
+                {loading ? t.saving : t.saveChanges}
               </button>
             </div>
           </form>

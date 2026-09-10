@@ -1,8 +1,10 @@
 import { Clock, DollarSign, Layers, Tags } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
 import type { Category } from '@/lib/types';
 
 export function ServiceStats({ categories, currency }: { categories: Category[]; currency: string }) {
+  const { t } = useLanguage();
   const services = categories.flatMap((c) => c.services);
   const totalCategories = categories.length;
   const totalServices = services.length;
@@ -11,10 +13,10 @@ export function ServiceStats({ categories, currency }: { categories: Category[];
   const avgDuration = priced.length ? Math.round(priced.reduce((sum, s) => sum + Number(s.price?.hours ?? 0) * 60 + Number(s.price?.minutes ?? 0), 0) / priced.length) : 0;
 
   const stats = [
-    { key: 'categories', label: 'Categories', value: totalCategories, sub: 'In your catalog', icon: Tags, iconBg: 'bg-blue-50 text-blue-600' },
-    { key: 'services', label: 'Services', value: totalServices, sub: 'Priced offerings', icon: Layers, iconBg: 'bg-accent-50 text-accent-600' },
-    { key: 'price', label: 'Avg. price', value: `${currency} ${avgPrice}`, sub: 'Across all services', icon: DollarSign, iconBg: 'bg-emerald-50 text-emerald-600' },
-    { key: 'duration', label: 'Avg. duration', value: `${avgDuration}m`, sub: 'Per session', icon: Clock, iconBg: 'bg-orange-50 text-orange-500' },
+    { key: 'categories', label: t.statCategories, value: totalCategories, sub: t.statInYourCatalog, icon: Tags, iconBg: 'bg-blue-50 text-blue-600' },
+    { key: 'services', label: t.navServices, value: totalServices, sub: t.statPricedOfferings, icon: Layers, iconBg: 'bg-accent-50 text-accent-600' },
+    { key: 'price', label: t.statAvgPrice, value: `${currency} ${avgPrice}`, sub: t.statAcrossAllServices, icon: DollarSign, iconBg: 'bg-emerald-50 text-emerald-600' },
+    { key: 'duration', label: t.statAvgDuration, value: `${avgDuration}m`, sub: t.statPerSession, icon: Clock, iconBg: 'bg-orange-50 text-orange-500' },
   ];
 
   return (

@@ -2,9 +2,10 @@
 
 import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
 import type { StudioClient } from '@/lib/types';
 
-import { getInitials, STATUS_BADGE_CLASS, STATUS_LABELS } from './types';
+import { clientStatusLabel, getInitials, STATUS_BADGE_CLASS } from './types';
 
 export function ClientCard({
   client,
@@ -19,6 +20,7 @@ export function ClientCard({
   onEdit: (client: StudioClient) => void;
   onDelete: (client: StudioClient) => void;
 }) {
+  const { t } = useLanguage();
   const name = client.client.user.name;
   const badgeClass = STATUS_BADGE_CLASS[client.status];
 
@@ -42,7 +44,7 @@ export function ClientCard({
               {client.client.hasInjury && <AlertTriangle size={13} className="flex-shrink-0 text-amber-500" />}
               {badgeClass && (
                 <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${badgeClass}`}>
-                  {STATUS_LABELS[client.status] ?? client.status}
+                  {clientStatusLabel(client.status, t)}
                 </span>
               )}
             </h3>
@@ -65,7 +67,7 @@ export function ClientCard({
               onEdit(client);
             }}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-accent-50 hover:text-accent-600"
-            title="Edit"
+            title={t.edit}
           >
             <Pencil size={14} />
           </button>
@@ -75,7 +77,7 @@ export function ClientCard({
               onDelete(client);
             }}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-red-50 hover:text-red-500"
-            title="Remove"
+            title={t.remove}
           >
             <Trash2 size={14} />
           </button>

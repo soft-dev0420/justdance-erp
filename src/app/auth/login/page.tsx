@@ -9,23 +9,31 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/context/auth-context';
 import { ApiError } from '@/lib/api-fetch';
 import { APPLE_LOGIN_ENABLED, FACEBOOK_LOGIN_ENABLED } from '@/lib/feature-flags';
+import { useLanguage, type T } from '@/lib/i18n';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-const OAUTH_ERROR_MESSAGES: Record<string, string> = {
-  no_account: 'No Just Dance account found for that account — sign up via the mobile app first.',
-  use_password: 'This email is registered with a password — please sign in with your email and password instead.',
-};
+function oauthErrorMessage(error: string, t: T): string {
+  switch (error) {
+    case 'no_account':
+      return t.oauthNoAccount;
+    case 'use_password':
+      return t.oauthUsePassword;
+    default:
+      return t.oauthSignInFailed;
+  }
+}
 
 // useSearchParams() opts the whole subtree out of static prerendering unless
 // isolated behind its own Suspense boundary — kept as a separate no-UI
 // component for exactly that reason.
 function OAuthErrorToast() {
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const error = searchParams.get('error');
-    if (error) toast.error(OAUTH_ERROR_MESSAGES[error] ?? 'Sign-in failed.');
+    if (error) toast.error(oauthErrorMessage(error, t));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -33,6 +41,7 @@ function OAuthErrorToast() {
 }
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const { login } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -47,7 +56,7 @@ export default function LoginPage() {
       await login(email, password);
       router.replace('/juststudio');
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Something went wrong');
+      toast.error(err instanceof ApiError ? err.message : t.authGenericError);
     } finally {
       setSubmitting(false);
     }
@@ -65,14 +74,14 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-xl font-semibold text-gray-900">Just Dance Studio</h1>
-            <p className="text-sm text-gray-500">Sign in to manage your studio</p>
+            <p className="text-sm text-gray-500">{t.studioTagline}</p>
           </div>
         </div>
 
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="email" className="text-xs font-medium text-gray-500">
-              Email
+              {t.email}
             </label>
             <input
               id="email"
@@ -86,7 +95,7 @@ export default function LoginPage() {
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="password" className="text-xs font-medium text-gray-500">
-              Password
+              {t.passwordLabel}
             </label>
             <input
               id="password"
@@ -100,7 +109,7 @@ export default function LoginPage() {
           </div>
 
           <Link href="/auth/forgot-password" className="-mt-1 self-end text-xs font-medium text-accent-600 hover:text-accent-700">
-            Forgot password?
+            {t.forgotPasswordLink}
           </Link>
 
           <button
@@ -108,13 +117,13 @@ export default function LoginPage() {
             disabled={submitting}
             className="mt-2 rounded-lg bg-accent-500 py-2.5 text-sm font-semibold text-white shadow-sm shadow-accent-200/50 transition hover:bg-accent-600 disabled:opacity-50"
           >
-            {submitting ? 'Signing in…' : 'Sign in'}
+            {submitting ? t.signingIn : t.signInLabel}
           </button>
         </form>
 
         <div className="my-5 flex items-center gap-3">
           <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs text-gray-400">or</span>
+          <span className="text-xs text-gray-400">{t.orDivider}</span>
           <div className="h-px flex-1 bg-gray-200" />
         </div>
 
@@ -125,7 +134,7 @@ export default function LoginPage() {
               className="flex items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-black py-2.5 text-sm font-medium text-white transition hover:bg-gray-900"
             >
               <AppleGlyph />
-              Continue with Apple
+              {t.continueWithApple}
             </a>
           )}
           <a
@@ -133,7 +142,7 @@ export default function LoginPage() {
             className="flex items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-gray-50 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
           >
             <GoogleGlyph />
-            Continue with Google
+            {t.continueWithGoogle}
           </a>
           {FACEBOOK_LOGIN_ENABLED && (
             <a
@@ -141,15 +150,12 @@ export default function LoginPage() {
               className="flex items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-gray-50 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
             >
               <FacebookGlyph />
-              Continue with Facebook
+              {t.continueWithFacebook}
             </a>
           )}
         </div>
 
-        <p className="mt-6 text-center text-xs text-gray-400">
-          Only provider accounts have a studio dashboard. Use the same credentials as the Just Dance mobile app —
-          social sign-in only works if you already have an account.
-        </p>
+        <p className="mt-6 text-center text-xs text-gray-400">{t.loginFooterNote}</p>
       </div>
     </div>
   );

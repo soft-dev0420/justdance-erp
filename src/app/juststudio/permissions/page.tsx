@@ -9,12 +9,15 @@ import { PermissionsMatrix } from '@/components/juststudio/permissions/permissio
 import { RoleDetails } from '@/components/juststudio/permissions/role-details';
 import { RoleList } from '@/components/juststudio/permissions/role-list';
 import { UnsavedBar } from '@/components/juststudio/permissions/unsaved-bar';
-import { MODULES } from '@/components/juststudio/permissions/types';
+import { getModules } from '@/components/juststudio/permissions/types';
 import { rolesApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
+import { useLanguage } from '@/lib/i18n';
 import type { Role } from '@/lib/types';
 
 export default function PermissionsPage() {
+  const { t } = useLanguage();
+  const MODULES = useMemo(() => getModules(t), [t]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [search, setSearch] = useState('');
@@ -46,10 +49,11 @@ export default function PermissionsPage() {
 
       setSelectedId((prev) => prev || data.find((r) => r.name !== 'owner')?.id || data[0]?.id || '');
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to load roles');
+      toast.error(err instanceof ApiError ? err.message : t.failedToLoadRoles);
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -77,7 +81,7 @@ export default function PermissionsPage() {
         if (!currentPerms[m.id]) return false;
         return m.granular?.every((g) => currentPerms[`${m.id}.${g.id}`]) ?? true;
       }),
-    [currentPerms],
+    [currentPerms, MODULES],
   );
 
   const filteredRoles = useMemo(() => {
@@ -123,9 +127,9 @@ export default function PermissionsPage() {
       setSavedPerms((prev) => ({ ...prev, [selectedId]: structuredClone(allPerms[selectedId] ?? {}) }));
       setSavedDetails((prev) => ({ ...prev, [selectedId]: { name: updated.name, description: updated.description } }));
       setRoles((prev) => prev.map((r) => (r.id === selectedId ? { ...r, name: updated.name, description: updated.description } : r)));
-      toast.success('Role saved');
+      toast.success(t.roleSaved);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to save role');
+      toast.error(err instanceof ApiError ? err.message : t.failedToSaveRole);
     } finally {
       setIsSaving(false);
     }
@@ -146,9 +150,9 @@ export default function PermissionsPage() {
       setSavedDetails((prev) => ({ ...prev, [created.id]: { name: created.name, description: created.description } }));
       setSelectedId(created.id);
       setShowCreateModal(false);
-      toast.success(`Role "${created.name}" created`);
+      toast.success(t.roleCreatedToast.replace('{value}', created.name));
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to create role');
+      toast.error(err instanceof ApiError ? err.message : t.failedToCreateRole);
     }
   };
 
@@ -156,15 +160,15 @@ export default function PermissionsPage() {
     <div className="flex h-full flex-col overflow-hidden bg-gray-50">
       <header className="flex flex-shrink-0 flex-col gap-2 border-b border-gray-100 bg-white px-4 py-3 md:h-[88px] md:flex-row md:items-center md:justify-between md:gap-0 md:px-8 md:py-0">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-gray-900 md:text-2xl">Roles &amp; permissions</h2>
-          <p className="mt-0.5 hidden text-sm text-gray-500 md:block">Control what each role can see and do.</p>
+          <h2 className="text-xl font-semibold tracking-tight text-gray-900 md:text-2xl">{t.rolesPermissionsHeading}</h2>
+          <p className="mt-0.5 hidden text-sm text-gray-500 md:block">{t.rolesPermissionsSubtitle}</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex h-9 flex-shrink-0 items-center gap-2 self-start rounded-lg bg-accent-500 px-4 text-sm font-medium text-white shadow-sm shadow-accent-200/50 transition-all hover:bg-accent-600 md:h-10 md:self-auto md:px-5"
         >
           <Plus size={16} />
-          Create role
+          {t.createRole}
         </button>
       </header>
 
@@ -186,11 +190,11 @@ export default function PermissionsPage() {
             </div>
           ) : !selectedRole ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 py-24 text-center">
-              <p className="text-base font-semibold text-gray-900">No roles yet</p>
-              <p className="max-w-xs text-sm text-gray-500">Create a role to control what your team can see and do.</p>
+              <p className="text-base font-semibold text-gray-900">{t.noRolesYet}</p>
+              <p className="max-w-xs text-sm text-gray-500">{t.noRolesYetSubtitle}</p>
               <button onClick={() => setShowCreateModal(true)} className="flex h-9 items-center gap-2 rounded-lg bg-accent-500 px-5 text-sm font-medium text-white transition-all hover:bg-accent-600">
                 <Plus size={16} />
-                Create a role
+                {t.createARole}
               </button>
             </div>
           ) : (
@@ -201,7 +205,7 @@ export default function PermissionsPage() {
                 onChangeName={(name) => setDetails((prev) => ({ ...prev, [selectedId]: { ...prev[selectedId]!, name } }))}
                 onChangeDescription={(description) => setDetails((prev) => ({ ...prev, [selectedId]: { ...prev[selectedId]!, description } }))}
               />
-              <PermissionsMatrix currentPerms={currentPerms} locked={locked} allEnabled={allEnabled} onToggle={handleTogglePerm} onToggleAll={handleToggleAll} />
+              <PermissionsMatrix modules={MODULES} currentPerms={currentPerms} locked={locked} allEnabled={allEnabled} onToggle={handleTogglePerm} onToggleAll={handleToggleAll} />
             </div>
           )}
         </div>

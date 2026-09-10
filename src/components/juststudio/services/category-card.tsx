@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
 import type { Category, Service } from '@/lib/types';
 
 import { ServiceRow } from './service-row';
@@ -17,6 +18,7 @@ export function CategoryCard({
   onDeleteService: (service: Service) => void;
   onDeleteCategory: (category: Category) => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
       <div className="flex items-center justify-between bg-gray-50 px-4 py-3">
@@ -26,7 +28,7 @@ export function CategoryCard({
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => onAddService(category.id)} className="flex items-center gap-1 text-xs font-medium text-accent-600 hover:text-accent-700">
-            <Plus size={13} /> Add service
+            <Plus size={13} /> {t.addService}
           </button>
           <button onClick={() => onDeleteCategory(category)} className="text-gray-400 hover:text-red-500">
             <Trash2 size={14} />
@@ -34,7 +36,7 @@ export function CategoryCard({
         </div>
       </div>
       {category.services.length === 0 ? (
-        <p className="px-4 py-4 text-xs text-gray-400">No services in this category yet.</p>
+        <p className="px-4 py-4 text-xs text-gray-400">{t.noServicesInCategory}</p>
       ) : (
         category.services.map((service) => <ServiceRow key={service.id} service={service} onEdit={onEditService} onDelete={onDeleteService} />)
       )}

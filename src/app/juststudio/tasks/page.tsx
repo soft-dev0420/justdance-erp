@@ -7,12 +7,14 @@ import toast from 'react-hot-toast';
 import { TaskColumn } from '@/components/juststudio/tasks/task-column';
 import { TaskDetailPanel } from '@/components/juststudio/tasks/task-detail-panel';
 import { TaskFormModal } from '@/components/juststudio/tasks/task-form-modal';
-import { COLUMNS, isOverdue, type Staff } from '@/components/juststudio/tasks/types';
+import { COLUMNS, isOverdue, taskStatusLabel, type Staff } from '@/components/juststudio/tasks/types';
 import { employeesApi, tasksApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
+import { useLanguage } from '@/lib/i18n';
 import type { Task } from '@/lib/types';
 
 export default function TasksPage() {
+  const { t } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,8 +31,9 @@ export default function TasksPage() {
         setTasks(t);
         setStaff(emps.map((e) => ({ id: e.id, name: e.name, speciality: e.speciality })));
       })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Failed to load tasks'))
+      .catch((err) => toast.error(err instanceof ApiError ? err.message : t.failedToLoadTasks))
       .finally(() => setIsLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredTasks = useMemo(() => {
@@ -53,9 +56,9 @@ export default function TasksPage() {
       const updated = await tasksApi.update(taskId, { status });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
       setActiveTask((prev) => (prev?.id === taskId ? updated : prev));
-      toast.success(`Moved to ${status.replace('-', ' ')}`);
+      toast.success(t.movedTo.replace('{value}', taskStatusLabel(status, t)));
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to update task');
+      toast.error(err instanceof ApiError ? err.message : t.failedToUpdateTask);
     }
   };
 
@@ -66,16 +69,16 @@ export default function TasksPage() {
         const updated = await tasksApi.update(editingTask.id, formData);
         setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
         if (activeTask?.id === updated.id) setActiveTask(updated);
-        toast.success('Task updated');
+        toast.success(t.taskUpdated);
       } else {
         const created = await tasksApi.create(formData);
         setTasks((prev) => [created, ...prev]);
-        toast.success('Task created');
+        toast.success(t.taskCreated);
       }
       setShowFormModal(false);
       setEditingTask(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to save task');
+      toast.error(err instanceof ApiError ? err.message : t.failedToSaveTask);
     } finally {
       setIsSaving(false);
     }
@@ -86,9 +89,9 @@ export default function TasksPage() {
       await tasksApi.remove(taskId);
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       if (activeTask?.id === taskId) setActiveTask(null);
-      toast.success('Task deleted');
+      toast.success(t.taskDeleted);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to delete task');
+      toast.error(err instanceof ApiError ? err.message : t.failedToDeleteTask);
     }
   };
 
@@ -114,20 +117,20 @@ export default function TasksPage() {
     <div className="relative flex h-full flex-col overflow-hidden bg-gray-50/50">
       <header className="z-10 flex h-16 shrink-0 items-center justify-between border-b border-gray-100 bg-white/80 px-4 backdrop-blur-md md:px-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-gray-900">Tasks</h1>
+          <h1 className="text-lg font-semibold text-gray-900">{t.navTasks}</h1>
           <div className="hidden items-center gap-2 md:flex">
             <span className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-              Pending: {stats.pending}
+              {t.taskStatusPending}: {stats.pending}
             </span>
             <span className="flex items-center gap-1.5 rounded-full bg-accent-50 px-3 py-1.5 text-xs font-medium text-accent-600">
               <span className="h-1.5 w-1.5 rounded-full bg-accent-500" />
-              In progress: {stats.inProgress}
+              {t.taskStatusInProgress}: {stats.inProgress}
             </span>
             {stats.overdue > 0 && (
               <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600">
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                Overdue: {stats.overdue}
+                {t.overdueLabel}: {stats.overdue}
               </span>
             )}
           </div>
@@ -140,7 +143,7 @@ export default function TasksPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tasks…"
+              placeholder={t.searchTasksPlaceholder}
               className="w-56 rounded-lg border-none bg-gray-100 py-2 pl-9 pr-4 text-sm outline-none transition-all focus:bg-white focus:ring-2 focus:ring-accent-500"
             />
           </div>
@@ -152,7 +155,7 @@ export default function TasksPage() {
             className="flex items-center gap-2 rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent-600"
           >
             <Plus size={16} />
-            New task
+            {t.newTask}
           </button>
         </div>
       </header>

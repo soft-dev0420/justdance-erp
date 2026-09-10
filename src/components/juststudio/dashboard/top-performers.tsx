@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { useLanguage } from '@/lib/i18n';
+
 import { glass, initials, RANK_COLORS } from './dashboard-types';
 import type { Employee } from './dashboard-types';
 
@@ -12,12 +14,13 @@ interface Props {
 }
 
 export function TopPerformers({ topPerformers, currency }: Props) {
+  const { t } = useLanguage();
   return (
     <section className="rounded-2xl p-6 shadow-sm" style={glass}>
-      <h2 className="mb-4 text-lg font-semibold text-slate-800">Top performers</h2>
+      <h2 className="mb-4 text-lg font-semibold text-slate-800">{t.topPerformersHeading}</h2>
       <div className="space-y-4">
         {topPerformers.length === 0 ? (
-          <p className="py-4 text-center text-sm text-slate-400 italic">No data yet.</p>
+          <p className="py-4 text-center text-sm text-slate-400 italic">{t.noDataYet}</p>
         ) : (
           topPerformers.map(({ emp, count, value }, i) => (
             <div key={emp.id} className="flex items-center justify-between">
@@ -38,7 +41,7 @@ export function TopPerformers({ topPerformers, currency }: Props) {
                 <div>
                   <p className="text-sm font-medium text-slate-800">{emp.name}</p>
                   <p className="text-xs text-slate-500">
-                    {count} {count !== 1 ? 'appts' : 'appt'}
+                    {count} {count !== 1 ? t.apptPlural : t.apptSingular}
                   </p>
                 </div>
               </div>
@@ -46,7 +49,7 @@ export function TopPerformers({ topPerformers, currency }: Props) {
                 <p className="text-sm font-bold text-slate-800">
                   {currency} {value.toLocaleString()}
                 </p>
-                <p className="text-[10px] text-accent-600">revenue</p>
+                <p className="text-[10px] text-accent-600">{t.revenueLabel}</p>
               </div>
             </div>
           ))
@@ -56,7 +59,7 @@ export function TopPerformers({ topPerformers, currency }: Props) {
         href="/juststudio/team"
         className="mt-5 block w-full rounded-lg border border-slate-200 py-2 text-center text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
       >
-        View all staff
+        {t.viewAllStaff}
       </Link>
     </section>
   );

@@ -2,14 +2,17 @@
 
 import Link from 'next/link';
 
+import { useLanguage } from '@/lib/i18n';
+
 import { glass } from './dashboard-types';
 
 export function DashboardHeader() {
+  const { t } = useLanguage();
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-4 md:px-8 md:py-5" style={glass}>
       <div>
-        <h1 className="text-xl font-bold text-slate-800 md:text-2xl">Overview</h1>
-        <p className="mt-0.5 text-xs text-slate-500 md:text-sm">Here&apos;s what&apos;s happening in your studio today.</p>
+        <h1 className="text-xl font-bold text-slate-800 md:text-2xl">{t.dashboardOverview}</h1>
+        <p className="mt-0.5 text-xs text-slate-500 md:text-sm">{t.todaysHappeningsSubtitle}</p>
       </div>
 
       <Link
@@ -20,8 +23,8 @@ export function DashboardHeader() {
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
-        <span className="hidden sm:inline">Quick booking</span>
-        <span className="sm:hidden">Book</span>
+        <span className="hidden sm:inline">{t.quickBooking}</span>
+        <span className="sm:hidden">{t.bookShort}</span>
       </Link>
     </header>
   );

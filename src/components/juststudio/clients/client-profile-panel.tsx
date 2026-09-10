@@ -3,11 +3,25 @@
 import { CalendarX2, Pencil, Trash2, Users, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { useLanguage, type T } from '@/lib/i18n';
 import type { Booking, StudioClient } from '@/lib/types';
 
-import { formatDate, getInitials, STATUS_BADGE_CLASS, STATUS_LABELS } from './types';
+import { clientStatusLabel, formatDate, getInitials, STATUS_BADGE_CLASS } from './types';
 
 type Tab = 'overview' | 'bookings' | 'notes';
+
+function bookingStatusLabel(status: Booking['status'], t: T): string {
+  const labels: Record<Booking['status'], string> = {
+    pending: t.bookingStatusPending,
+    confirmed: t.bookingStatusConfirmed,
+    'checked-in': t.bookingStatusCheckedIn,
+    'in-progress': t.bookingStatusInProgress,
+    completed: t.taskStatusCompleted,
+    cancelled: t.shiftStatusCancelled,
+    'no-show': t.bookingStatusNoShow,
+  };
+  return labels[status] ?? status;
+}
 
 const BOOKING_STATUS_STYLE: Record<Booking['status'], { bar: string; badge: string }> = {
   pending: { bar: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700' },
@@ -32,6 +46,7 @@ export function ClientProfilePanel({
   onEdit: (client: StudioClient) => void;
   onDelete: (client: StudioClient) => void;
 }) {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('overview');
 
   if (!client) {
@@ -40,8 +55,8 @@ export function ClientProfilePanel({
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
           <Users size={26} className="text-gray-400" />
         </div>
-        <p className="mb-1 text-sm font-medium text-gray-600">No client selected</p>
-        <p className="text-xs text-gray-400">Click a client from the list to view their details</p>
+        <p className="mb-1 text-sm font-medium text-gray-600">{t.noClientSelected}</p>
+        <p className="text-xs text-gray-400">{t.clickClientToViewDetails}</p>
       </div>
     );
   }
@@ -51,15 +66,15 @@ export function ClientProfilePanel({
   const clientBookings = bookings.filter((b) => b.studioClientId === client.id);
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'bookings', label: 'Bookings' },
-    { id: 'notes', label: 'Notes' },
+    { id: 'overview', label: t.overviewTab },
+    { id: 'bookings', label: t.bookingsTabLabel },
+    { id: 'notes', label: t.notesLabel },
   ];
 
   const quickStats = [
-    { label: 'Status', value: STATUS_LABELS[client.status] ?? client.status },
-    { label: 'Instructor', value: client.instructor?.name ?? '—' },
-    { label: 'Visits', value: String(client.visitedTimes) },
+    { label: t.statusFieldLabel, value: clientStatusLabel(client.status, t) },
+    { label: t.instructorLabel, value: client.instructor?.name ?? '—' },
+    { label: t.visitsLabel, value: String(client.visitedTimes) },
   ];
 
   return (
@@ -76,15 +91,15 @@ export function ClientProfilePanel({
               </div>
               <div className="pt-0.5">
                 <h2 className="text-lg leading-tight font-bold text-gray-900">{name}</h2>
-                <p className="mt-0.5 mb-2 text-xs text-gray-500">Joined {formatDate(client.createdAt)}</p>
+                <p className="mt-0.5 mb-2 text-xs text-gray-500">{t.joined} {formatDate(client.createdAt)}</p>
                 {badgeClass && (
                   <span className={`rounded px-2 py-0.5 text-xs font-semibold tracking-wide uppercase ${badgeClass}`}>
-                    {STATUS_LABELS[client.status] ?? client.status}
+                    {clientStatusLabel(client.status, t)}
                   </span>
                 )}
               </div>
             </div>
-            <button onClick={onClose} className="text-gray-400 transition-colors hover:text-gray-700" aria-label="Close panel">
+            <button onClick={onClose} className="text-gray-400 transition-colors hover:text-gray-700" aria-label={t.closePanel}>
               <X size={19} />
             </button>
           </div>
@@ -120,18 +135,18 @@ export function ClientProfilePanel({
             {tab === 'overview' && (
               <>
                 <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <h3 className="mb-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase">Contact information</h3>
+                  <h3 className="mb-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase">{t.contactInformation}</h3>
                   <div className="space-y-2.5 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="flex-shrink-0 text-gray-500">Email</span>
+                      <span className="flex-shrink-0 text-gray-500">{t.email}</span>
                       <span className="truncate font-medium text-gray-900">{client.client.user.email}</span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="flex-shrink-0 text-gray-500">Instructor</span>
+                      <span className="flex-shrink-0 text-gray-500">{t.instructorLabel}</span>
                       <span className="truncate font-medium text-gray-900">{client.instructor?.name ?? '—'}</span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="flex-shrink-0 text-gray-500">Joined</span>
+                      <span className="flex-shrink-0 text-gray-500">{t.joined}</span>
                       <span className="truncate font-medium text-gray-900">{formatDate(client.createdAt)}</span>
                     </div>
                   </div>
@@ -139,14 +154,14 @@ export function ClientProfilePanel({
 
                 {client.client.hasInjury && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <h3 className="mb-1.5 text-[10px] font-bold tracking-wider text-amber-700 uppercase">Injury notes</h3>
-                    <p className="text-sm text-amber-800">{client.client.injuryNotes || 'Flagged, no details added.'}</p>
+                    <h3 className="mb-1.5 text-[10px] font-bold tracking-wider text-amber-700 uppercase">{t.injuryNotesHeading}</h3>
+                    <p className="text-sm text-amber-800">{client.client.injuryNotes || t.flaggedNoDetails}</p>
                   </div>
                 )}
 
                 {client.notes && (
                   <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                    <h3 className="mb-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase">Notes</h3>
+                    <h3 className="mb-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase">{t.notesLabel}</h3>
                     <p className="rounded-lg bg-gray-50 p-3 text-sm leading-relaxed text-gray-600">{client.notes}</p>
                   </div>
                 )}
@@ -160,7 +175,7 @@ export function ClientProfilePanel({
                     <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
                       <CalendarX2 size={20} className="text-gray-400" />
                     </div>
-                    <p className="text-sm text-gray-500">No bookings yet</p>
+                    <p className="text-sm text-gray-500">{t.noBookingsYet}</p>
                   </div>
                 ) : (
                   clientBookings.map((b) => {
@@ -174,11 +189,11 @@ export function ClientProfilePanel({
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-gray-900">
-                            {b.services.map((s) => s.name).join(', ') || 'Session'}
+                            {b.services.map((s) => s.name).join(', ') || t.sessionFallback}
                           </p>
                           {b.employee?.name && <p className="mt-0.5 text-xs text-gray-500">{b.employee.name}</p>}
                         </div>
-                        <span className={`flex-shrink-0 rounded px-2 py-0.5 text-[10px] font-bold uppercase ${style.badge}`}>{b.status}</span>
+                        <span className={`flex-shrink-0 rounded px-2 py-0.5 text-[10px] font-bold uppercase ${style.badge}`}>{bookingStatusLabel(b.status, t)}</span>
                       </div>
                     );
                   })
@@ -188,11 +203,11 @@ export function ClientProfilePanel({
 
             {tab === 'notes' && (
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <h3 className="mb-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase">Notes</h3>
+                <h3 className="mb-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase">{t.notesLabel}</h3>
                 {client.notes ? (
                   <p className="text-sm leading-relaxed text-gray-600">{client.notes}</p>
                 ) : (
-                  <p className="text-sm text-gray-400">No notes yet.</p>
+                  <p className="text-sm text-gray-400">{t.noNotesYet}</p>
                 )}
               </div>
             )}
@@ -202,7 +217,7 @@ export function ClientProfilePanel({
             <button
               onClick={() => onEdit(client)}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-500 text-white shadow-md transition-colors hover:bg-accent-600"
-              title="Edit"
+              title={t.edit}
             >
               <Pencil size={14} />
             </button>
@@ -210,7 +225,7 @@ export function ClientProfilePanel({
             <button
               onClick={() => onDelete(client)}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
-              title="Remove"
+              title={t.remove}
             >
               <Trash2 size={14} />
             </button>

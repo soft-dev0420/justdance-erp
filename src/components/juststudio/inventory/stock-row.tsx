@@ -1,8 +1,9 @@
 import { Pencil, Trash2 } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
 import type { StockItem } from '@/lib/types';
 
-import { STATUS_COLOR, STATUS_LABEL, getCategoryColor, getProgressColor, getStockProgress, getStockStatus } from './types';
+import { STATUS_COLOR, getCategoryColor, getProgressColor, getStockProgress, getStockStatus, statusLabel } from './types';
 
 export function StockRow({
   item,
@@ -17,6 +18,7 @@ export function StockRow({
   onEdit: (item: StockItem) => void;
   onDelete: (item: StockItem) => void;
 }) {
+  const { t } = useLanguage();
   const status = getStockStatus(item.currentStock, item.minStock);
   const pct = getStockProgress(item.currentStock, item.minStock);
   const barColor = getProgressColor(pct);
@@ -48,7 +50,7 @@ export function StockRow({
           <span className="font-medium text-gray-700">
             {item.currentStock} / min {item.minStock} {item.unit}
           </span>
-          <span className={`font-semibold ${STATUS_COLOR[status]}`}>{STATUS_LABEL[status]}</span>
+          <span className={`font-semibold ${STATUS_COLOR[status]}`}>{statusLabel(status, t)}</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-gray-100">
           <div className={`h-1.5 rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
@@ -61,7 +63,7 @@ export function StockRow({
             e.stopPropagation();
             onEdit(item);
           }}
-          title="Edit product"
+          title={t.editProduct}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-gray-400 shadow-sm transition-all hover:border-gray-200 hover:bg-white hover:text-gray-700"
         >
           <Pencil size={14} />
@@ -71,7 +73,7 @@ export function StockRow({
             e.stopPropagation();
             onDelete(item);
           }}
-          title="Delete product"
+          title={t.deleteProductTitle}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-gray-400 shadow-sm transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-500"
         >
           <Trash2 size={14} />

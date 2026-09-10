@@ -8,6 +8,7 @@ import { Input, Label } from '@/components/juststudio/ui/input';
 import { Modal } from '@/components/juststudio/ui/modal';
 import { catalogApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
+import { useLanguage } from '@/lib/i18n';
 import type { Service } from '@/lib/types';
 
 export function ServiceFormModal({
@@ -21,6 +22,7 @@ export function ServiceFormModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState(service?.name ?? '');
   const [hours, setHours] = useState(service?.price?.hours ?? '0');
   const [minutes, setMinutes] = useState(service?.price?.minutes ?? '60');
@@ -34,47 +36,47 @@ export function ServiceFormModal({
     try {
       if (service) {
         await catalogApi.updateService(service.id, { name: name.trim(), hours, minutes, price: Number(price), description: description.trim() || undefined });
-        toast.success('Service updated');
+        toast.success(t.serviceUpdated);
       } else {
         await catalogApi.createService({ categoryId, name: name.trim(), hours, minutes, price: Number(price), description: description.trim() || undefined });
-        toast.success('Service added');
+        toast.success(t.serviceAdded);
       }
       onSaved();
       onClose();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to save service');
+      toast.error(err instanceof ApiError ? err.message : t.failedToSaveService);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal open onClose={onClose} title={service ? 'Edit service' : 'Add service'}>
+    <Modal open onClose={onClose} title={service ? t.editService : t.addService}>
       <div className="flex flex-col gap-4">
         <div>
-          <Label>Service name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="60-min private lesson" />
+          <Label>{t.serviceNameLabel}</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.serviceNamePlaceholder} />
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label>Hours</Label>
+            <Label>{t.hoursLabel}</Label>
             <Input type="number" min={0} value={hours} onChange={(e) => setHours(e.target.value)} />
           </div>
           <div>
-            <Label>Minutes</Label>
+            <Label>{t.minutesLabel}</Label>
             <Input type="number" min={0} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
           </div>
           <div>
-            <Label>Price</Label>
+            <Label>{t.priceLabel}</Label>
             <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="80" />
           </div>
         </div>
         <div>
-          <Label>Description (optional)</Label>
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's included" />
+          <Label>{t.descriptionOptional}</Label>
+          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t.whatsIncludedPlaceholder} />
         </div>
         <Button onClick={() => void onSubmit()} disabled={submitting || !name.trim() || !price}>
-          {submitting ? 'Saving…' : service ? 'Save changes' : 'Add service'}
+          {submitting ? t.saving : service ? t.saveChanges : t.addService}
         </Button>
       </div>
     </Modal>

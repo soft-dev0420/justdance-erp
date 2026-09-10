@@ -14,11 +14,13 @@ import { Button } from '@/components/juststudio/ui/button';
 import { EmptyState } from '@/components/juststudio/ui/empty-state';
 import { ApiError } from '@/lib/api-fetch';
 import { bookingsApi, clientsApi, employeesApi } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 import type { Booking, Employee, StudioClient } from '@/lib/types';
 
 const PAGE_SIZE = 10;
 
 export default function ClientsPage() {
+  const { t } = useLanguage();
   const [clients, setClients] = useState<StudioClient[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -87,10 +89,10 @@ export default function ClientsPage() {
     try {
       const created = await clientsApi.create({ email: values.email, instructorId: values.instructorId || undefined, notes: values.notes || undefined });
       setClients((prev) => [created, ...prev]);
-      toast.success('Client added');
+      toast.success(t.clientAdded);
       setFormMode(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to add client');
+      toast.error(err instanceof ApiError ? err.message : t.failedToAddClient);
     } finally {
       setSubmitting(false);
     }
@@ -109,10 +111,10 @@ export default function ClientsPage() {
       });
       setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       setSelected(updated);
-      toast.success('Client updated');
+      toast.success(t.clientUpdated);
       setFormMode(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to save changes');
+      toast.error(err instanceof ApiError ? err.message : t.failedToSaveChanges);
     } finally {
       setSubmitting(false);
     }
@@ -125,10 +127,10 @@ export default function ClientsPage() {
       await clientsApi.remove(deleteTarget.id);
       setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id));
       if (selected?.id === deleteTarget.id) setSelected(null);
-      toast.success('Client removed');
+      toast.success(t.clientRemoved);
       setDeleteTarget(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to remove client');
+      toast.error(err instanceof ApiError ? err.message : t.failedToRemoveClient);
     } finally {
       setSubmitting(false);
     }
@@ -137,11 +139,11 @@ export default function ClientsPage() {
   return (
     <div className="flex min-h-full flex-col">
       <PageHeader
-        title="Clients"
-        description="Everyone who trains or performs with your studio."
+        title={t.navClients}
+        description={t.clientsPageDescription}
         action={
           <Button onClick={() => setFormMode('add')}>
-            <Plus size={16} /> Add client
+            <Plus size={16} /> {t.addClient}
           </Button>
         }
       />
@@ -166,8 +168,8 @@ export default function ClientsPage() {
               {pageItems.length === 0 ? (
                 <EmptyState
                   icon={Users}
-                  title="No clients found"
-                  description={searchQuery || statusFilter !== 'all' ? 'Try adjusting your filters.' : 'Add a client by the email they registered with in the Just Dance app.'}
+                  title={t.noClientsFound}
+                  description={searchQuery || statusFilter !== 'all' ? t.tryAdjustingFilters : t.addClientHint}
                 />
               ) : (
                 <div className="space-y-3">
@@ -190,7 +192,7 @@ export default function ClientsPage() {
               {totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
                   <span className="text-sm text-gray-500">
-                    Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+                    {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
                   </span>
                   <div className="flex items-center gap-1">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (

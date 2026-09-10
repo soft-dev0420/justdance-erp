@@ -2,6 +2,8 @@
 
 import { Search } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
+
 export function TeamFilters({
   roleCounts,
   total,
@@ -21,6 +23,7 @@ export function TeamFilters({
   searchQuery: string;
   setSearchQuery: (v: string) => void;
 }) {
+  const { t } = useLanguage();
   const roleNames = Object.keys(roleCounts);
 
   return (
@@ -31,7 +34,7 @@ export function TeamFilters({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by name or email"
+          placeholder={t.searchByNameOrEmail}
           className="w-full rounded-xl border border-gray-200 bg-white py-2 pr-4 pl-10 text-sm shadow-sm outline-none transition-all focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
         />
       </div>
@@ -44,7 +47,7 @@ export function TeamFilters({
               activeRole === 'All' ? 'bg-gray-900 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-800'
             }`}
           >
-            All roles {total > 0 && <span className="ml-1.5 text-xs opacity-60">({total})</span>}
+            {t.allRoles} {total > 0 && <span className="ml-1.5 text-xs opacity-60">({total})</span>}
           </button>
           {roleNames.map((role) => (
             <button
@@ -60,15 +63,15 @@ export function TeamFilters({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-500">Sort by</span>
+          <span className="text-sm font-medium text-gray-500">{t.sortBy}</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-colors focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
           >
-            <option value="name">Name</option>
-            <option value="role">Role</option>
-            <option value="status">Availability</option>
+            <option value="name">{t.fieldName}</option>
+            <option value="role">{t.fieldRole}</option>
+            <option value="status">{t.availability}</option>
           </select>
         </div>
       </div>

@@ -2,9 +2,10 @@
 
 import { Crown } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
 import type { Employee } from '@/lib/types';
 
-import { getInitials, STATUS_BADGE_CLASS, STATUS_DOT_CLASS, STATUS_LABELS } from './types';
+import { getInitials, statusLabel, STATUS_BADGE_CLASS, STATUS_DOT_CLASS } from './types';
 
 export function TeamMemberCard({
   member,
@@ -15,6 +16,7 @@ export function TeamMemberCard({
   isSelected: boolean;
   onSelect: (member: Employee) => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div
       onClick={() => onSelect(member)}
@@ -34,24 +36,24 @@ export function TeamMemberCard({
             {member.name}
             {member.isOwner && <Crown size={13} className="ml-1.5 inline-block flex-shrink-0 text-accent-500" />}
           </h3>
-          <p className="mt-0.5 truncate text-xs text-gray-500">{member.role?.name ?? 'No role assigned'}</p>
+          <p className="mt-0.5 truncate text-xs text-gray-500">{member.role?.name ?? t.noRoleAssigned}</p>
         </div>
       </div>
 
       <div className="mb-4">
         <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${STATUS_BADGE_CLASS[member.status]}`}>
           <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${STATUS_DOT_CLASS[member.status]}`} />
-          {STATUS_LABELS[member.status]}
+          {statusLabel(member.status, t)}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 border-t border-gray-50 pt-3">
         <div>
-          <p className="mb-0.5 text-[10px] font-medium tracking-wider text-gray-400 uppercase">Speciality</p>
+          <p className="mb-0.5 text-[10px] font-medium tracking-wider text-gray-400 uppercase">{t.speciality}</p>
           <p className="truncate text-xs font-semibold text-gray-700">{member.speciality || '—'}</p>
         </div>
         <div>
-          <p className="mb-0.5 text-[10px] font-medium tracking-wider text-gray-400 uppercase">Email</p>
+          <p className="mb-0.5 text-[10px] font-medium tracking-wider text-gray-400 uppercase">{t.email}</p>
           <p className="truncate text-xs font-medium text-gray-600">{member.email || '—'}</p>
         </div>
       </div>

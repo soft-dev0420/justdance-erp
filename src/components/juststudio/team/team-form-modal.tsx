@@ -5,9 +5,10 @@ import { useState } from 'react';
 import { Button } from '@/components/juststudio/ui/button';
 import { Input, Label, Select } from '@/components/juststudio/ui/input';
 import { Modal } from '@/components/juststudio/ui/modal';
+import { useLanguage } from '@/lib/i18n';
 import type { Employee, Role } from '@/lib/types';
 
-import { STATUS_LABELS } from './types';
+import { statusLabel } from './types';
 
 interface AddValues {
   name: string;
@@ -40,6 +41,8 @@ export function TeamFormModal({
   onSubmitAdd: (values: AddValues) => void;
   onSubmitEdit: (values: EditValues) => void;
 }) {
+  const { t } = useLanguage();
+  const STATUS_OPTIONS: Employee['status'][] = ['available', 'vacation', 'sick', 'unavailable', 'off-duty'];
   const [add, setAdd] = useState<AddValues>({ name: '', email: '', roleId: '', speciality: '' });
   // Lazy initializer reads straight from props — the parent remounts this
   // component (via a `key` keyed to the target member/mode) whenever the
@@ -53,20 +56,20 @@ export function TeamFormModal({
 
   if (mode === 'add') {
     return (
-      <Modal open title="Invite team member" onClose={onClose}>
+      <Modal open title={t.inviteTeamMember} onClose={onClose}>
         <div className="flex flex-col gap-4">
           <div>
-            <Label>Name</Label>
-            <Input value={add.name} onChange={(e) => setAdd((s) => ({ ...s, name: e.target.value }))} placeholder="Full name" />
+            <Label>{t.fieldName}</Label>
+            <Input value={add.name} onChange={(e) => setAdd((s) => ({ ...s, name: e.target.value }))} placeholder={t.fullNamePlaceholder} />
           </div>
           <div>
-            <Label>Email</Label>
-            <Input type="email" value={add.email} onChange={(e) => setAdd((s) => ({ ...s, email: e.target.value }))} placeholder="teammate@example.com" />
+            <Label>{t.email}</Label>
+            <Input type="email" value={add.email} onChange={(e) => setAdd((s) => ({ ...s, email: e.target.value }))} placeholder={t.emailPlaceholderTeammate} />
           </div>
           <div>
-            <Label>Role (optional)</Label>
+            <Label>{t.roleOptional}</Label>
             <Select value={add.roleId} onChange={(e) => setAdd((s) => ({ ...s, roleId: e.target.value }))}>
-              <option value="">No role assigned yet</option>
+              <option value="">{t.noRoleAssignedYet}</option>
               {roles.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
@@ -75,11 +78,11 @@ export function TeamFormModal({
             </Select>
           </div>
           <div>
-            <Label>Speciality (optional)</Label>
-            <Input value={add.speciality} onChange={(e) => setAdd((s) => ({ ...s, speciality: e.target.value }))} placeholder="e.g. Ballroom, Hip-hop" />
+            <Label>{t.specialityOptional}</Label>
+            <Input value={add.speciality} onChange={(e) => setAdd((s) => ({ ...s, speciality: e.target.value }))} placeholder={t.specialityPlaceholder} />
           </div>
           <Button onClick={() => onSubmitAdd(add)} disabled={submitting || !add.name || !add.email}>
-            {submitting ? 'Sending invite…' : 'Send invite'}
+            {submitting ? t.sendingInvite : t.sendInvite}
           </Button>
         </div>
       </Modal>
@@ -88,17 +91,17 @@ export function TeamFormModal({
 
   if (mode === 'edit' && member) {
     return (
-      <Modal open title={`Edit ${member.name}`} onClose={onClose}>
+      <Modal open title={`${t.edit} ${member.name}`} onClose={onClose}>
         <div className="flex flex-col gap-4">
           <div>
-            <Label>Name</Label>
+            <Label>{t.fieldName}</Label>
             <Input value={edit.name} onChange={(e) => setEdit((s) => ({ ...s, name: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Role</Label>
+              <Label>{t.fieldRole}</Label>
               <Select value={edit.roleId} onChange={(e) => setEdit((s) => ({ ...s, roleId: e.target.value }))}>
-                <option value="">Unassigned</option>
+                <option value="">{t.unassigned}</option>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
@@ -107,22 +110,22 @@ export function TeamFormModal({
               </Select>
             </div>
             <div>
-              <Label>Availability</Label>
+              <Label>{t.availability}</Label>
               <Select value={edit.status} onChange={(e) => setEdit((s) => ({ ...s, status: e.target.value as Employee['status'] }))}>
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                {STATUS_OPTIONS.map((value) => (
                   <option key={value} value={value}>
-                    {label}
+                    {statusLabel(value, t)}
                   </option>
                 ))}
               </Select>
             </div>
           </div>
           <div>
-            <Label>Speciality</Label>
-            <Input value={edit.speciality} onChange={(e) => setEdit((s) => ({ ...s, speciality: e.target.value }))} placeholder="e.g. Ballroom, Hip-hop" />
+            <Label>{t.speciality}</Label>
+            <Input value={edit.speciality} onChange={(e) => setEdit((s) => ({ ...s, speciality: e.target.value }))} placeholder={t.specialityPlaceholder} />
           </div>
           <Button onClick={() => onSubmitEdit(edit)} disabled={submitting || !edit.name}>
-            {submitting ? 'Saving…' : 'Save changes'}
+            {submitting ? t.saving : t.saveChanges}
           </Button>
         </div>
       </Modal>

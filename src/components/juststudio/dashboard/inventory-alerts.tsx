@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 
+import { useLanguage } from '@/lib/i18n';
+
 import { glass } from './dashboard-types';
 
 interface InventoryAlert {
@@ -15,21 +17,22 @@ interface Props {
 }
 
 export function InventoryAlerts({ items }: Props) {
+  const { t } = useLanguage();
   const actionCount = items.length;
 
   return (
     <section className="rounded-2xl p-6 shadow-sm" style={glass}>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-800">Inventory alerts</h2>
+        <h2 className="text-lg font-semibold text-slate-800">{t.inventoryAlertsHeading}</h2>
         {actionCount > 0 && (
           <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-600">
-            {actionCount} {actionCount !== 1 ? 'actions' : 'action'}
+            {actionCount} {actionCount !== 1 ? t.actionPlural : t.actionSingular}
           </span>
         )}
       </div>
 
       {items.length === 0 ? (
-        <p className="py-4 text-center text-sm text-slate-400">All stock levels are healthy.</p>
+        <p className="py-4 text-center text-sm text-slate-400">{t.allStockHealthy}</p>
       ) : (
         <div className="space-y-3">
           {items.map((item, i) => {
@@ -54,7 +57,7 @@ export function InventoryAlerts({ items }: Props) {
                     <span className="text-sm font-medium text-slate-800">{item.name}</span>
                   </div>
                   <span className={`text-xs font-medium ${isOut ? 'text-rose-600' : 'text-amber-600'}`}>
-                    {isOut ? 'Out of stock' : `Low stock (${Math.round(item.amount)}%)`}
+                    {isOut ? t.statusOutOfStock : t.lowStockPct.replace('{value}', String(Math.round(item.amount)))}
                   </span>
                 </div>
                 <Link
@@ -63,7 +66,7 @@ export function InventoryAlerts({ items }: Props) {
                     isOut ? 'bg-accent-600 text-white shadow-sm hover:bg-accent-700' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                   }`}
                 >
-                  {isOut ? 'Restock now' : 'Restock'}
+                  {isOut ? t.restockNow : t.restockLabel}
                 </Link>
               </div>
             );

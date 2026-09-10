@@ -13,9 +13,11 @@ import { Button } from '@/components/juststudio/ui/button';
 import { EmptyState } from '@/components/juststudio/ui/empty-state';
 import { ApiError } from '@/lib/api-fetch';
 import { employeesApi, rolesApi } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 import type { Employee, Role } from '@/lib/types';
 
 export default function TeamPage() {
+  const { t } = useLanguage();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,15 +45,15 @@ export default function TeamPage() {
   const roleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const e of employees) {
-      const name = e.role?.name ?? 'No role';
+      const name = e.role?.name ?? t.noRoleAssigned;
       counts[name] = (counts[name] ?? 0) + 1;
     }
     return counts;
-  }, [employees]);
+  }, [employees, t.noRoleAssigned]);
 
   const filtered = useMemo(() => {
     let result = [...employees];
-    if (activeRole !== 'All') result = result.filter((e) => (e.role?.name ?? 'No role') === activeRole);
+    if (activeRole !== 'All') result = result.filter((e) => (e.role?.name ?? t.noRoleAssigned) === activeRole);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter((e) => e.name.toLowerCase().includes(q) || (e.email ?? '').toLowerCase().includes(q));
@@ -62,7 +64,7 @@ export default function TeamPage() {
       return a.name.localeCompare(b.name);
     });
     return result;
-  }, [employees, activeRole, sortBy, searchQuery]);
+  }, [employees, activeRole, sortBy, searchQuery, t.noRoleAssigned]);
 
   const onAdd = async (values: { name: string; email: string; roleId: string; speciality: string }) => {
     setSubmitting(true);
@@ -74,10 +76,10 @@ export default function TeamPage() {
         speciality: values.speciality || undefined,
       });
       setEmployees((prev) => [...prev, created]);
-      toast.success('Invite sent');
+      toast.success(t.inviteSent);
       setFormMode(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to invite team member');
+      toast.error(err instanceof ApiError ? err.message : t.failedToInvite);
     } finally {
       setSubmitting(false);
     }
@@ -100,10 +102,10 @@ export default function TeamPage() {
       const merged = { ...withDetails, status: values.status };
       setEmployees((prev) => prev.map((e) => (e.id === merged.id ? merged : e)));
       setSelected(merged);
-      toast.success('Team member updated');
+      toast.success(t.teamMemberUpdated);
       setFormMode(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to save changes');
+      toast.error(err instanceof ApiError ? err.message : t.failedToSaveChanges);
     } finally {
       setSubmitting(false);
     }
@@ -112,11 +114,11 @@ export default function TeamPage() {
   return (
     <div className="flex min-h-full flex-col">
       <PageHeader
-        title="Team"
-        description="Everyone with access to this studio."
+        title={t.navTeam}
+        description={t.teamPageDescription}
         action={
           <Button onClick={() => setFormMode('add')}>
-            <Plus size={16} /> Invite team member
+            <Plus size={16} /> {t.inviteTeamMember}
           </Button>
         }
       />
@@ -141,7 +143,7 @@ export default function TeamPage() {
               />
 
               {filtered.length === 0 ? (
-                <EmptyState icon={UserSquare2} title="No team members found" description={searchQuery || activeRole !== 'All' ? 'Try adjusting your filters.' : undefined} />
+                <EmptyState icon={UserSquare2} title={t.noTeamMembersFound} description={searchQuery || activeRole !== 'All' ? t.tryAdjustingFilters : undefined} />
               ) : (
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {filtered.map((member) => (

@@ -7,12 +7,11 @@ import toast from 'react-hot-toast';
 import { employeesApi, shiftsApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
 import type { CreateShiftDayInput } from '@/lib/api';
+import { LOCALE_TAG, useLanguage } from '@/lib/i18n';
 import type { Employee, ShiftDay } from '@/lib/types';
 
 import { ShiftFormModal } from './shift-form-modal';
-import { SHIFT_CHIP, SHIFT_DOT, STATUS_BADGE, toDateStr } from './types';
-
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+import { SHIFT_CHIP, SHIFT_DOT, STATUS_BADGE, shiftStatusLabel, shiftTypeLabel, toDateStr } from './types';
 
 function getDaysInMonth(date: Date): (Date | null)[] {
   const year = date.getFullYear();
@@ -26,6 +25,8 @@ function getDaysInMonth(date: Date): (Date | null)[] {
 }
 
 export function WorkScheduleCalendar() {
+  const { t, lang } = useLanguage();
+  const DAY_LABELS = [t.dayShortSun, t.dayShortMon, t.dayShortTue, t.dayShortWed, t.dayShortThu, t.dayShortFri, t.dayShortSat];
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [shiftDays, setShiftDays] = useState<ShiftDay[]>([]);
@@ -42,8 +43,9 @@ export function WorkScheduleCalendar() {
 
   useEffect(() => {
     load()
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Failed to load work schedule'))
+      .catch((err) => toast.error(err instanceof ApiError ? err.message : t.failedToLoadWorkSchedule))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getShiftForDate = (date: Date | null): ShiftDay | undefined => (date ? shiftDays.find((s) => s.date === toDateStr(date)) : undefined);
@@ -73,29 +75,29 @@ export function WorkScheduleCalendar() {
       if (editingShift) {
         const updated = await shiftsApi.update(editingShift.id, data);
         setShiftDays((prev) => prev.map((s) => (s.id === editingShift.id ? updated : s)));
-        toast.success('Shift updated');
+        toast.success(t.shiftUpdated);
       } else {
         const created = await shiftsApi.create(data);
         setShiftDays((prev) => [...prev, created]);
-        toast.success('Shift created');
+        toast.success(t.shiftCreated);
       }
       setShowModal(false);
       setEditingShift(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to save shift');
+      toast.error(err instanceof ApiError ? err.message : t.failedToSaveShift);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDeleteShift = async (id: string) => {
-    if (!confirm('Delete this shift roster? All assigned slots will be removed.')) return;
+    if (!confirm(t.confirmDeleteShift)) return;
     try {
       await shiftsApi.remove(id);
       setShiftDays((prev) => prev.filter((s) => s.id !== id));
-      toast.success('Shift deleted');
+      toast.success(t.shiftDeleted);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to delete shift');
+      toast.error(err instanceof ApiError ? err.message : t.failedToDeleteShift);
     }
   };
 
@@ -113,8 +115,8 @@ export function WorkScheduleCalendar() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Work Schedule</h1>
-        <p className="mt-1 text-gray-600">Plan and manage your team&apos;s shifts</p>
+        <h1 className="text-3xl font-bold text-gray-900">{t.navWorkSchedule}</h1>
+        <p className="mt-1 text-gray-600">{t.planAndManageShifts}</p>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -122,13 +124,13 @@ export function WorkScheduleCalendar() {
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-xl font-semibold">
               <CalendarIcon className="h-6 w-6 text-accent-600" />
-              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              {currentDate.toLocaleDateString(LOCALE_TAG[lang], { month: 'long', year: 'numeric' })}
             </h2>
             <div className="flex items-center gap-2">
-              <button onClick={() => navigateMonth('prev')} className="rounded p-2 transition-colors hover:bg-gray-100" title="Previous month">
+              <button onClick={() => navigateMonth('prev')} className="rounded p-2 transition-colors hover:bg-gray-100" title={t.previousMonth}>
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <button onClick={() => navigateMonth('next')} className="rounded p-2 transition-colors hover:bg-gray-100" title="Next month">
+              <button onClick={() => navigateMonth('next')} className="rounded p-2 transition-colors hover:bg-gray-100" title={t.nextMonth}>
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -159,7 +161,7 @@ export function WorkScheduleCalendar() {
                           {slot.employee.name}
                         </span>
                       ))}
-                      {(shift?.slots.length ?? 0) > 2 && <span className="text-[11px] text-gray-400">+{shift!.slots.length - 2} more</span>}
+                      {(shift?.slots.length ?? 0) > 2 && <span className="text-[11px] text-gray-400">+{shift!.slots.length - 2} {t.moreSuffix}</span>}
                     </div>
                   </>
                 )}
@@ -173,10 +175,10 @@ export function WorkScheduleCalendar() {
         <div className="rounded-lg border border-gray-200 bg-white shadow-md">
           <div className="border-b p-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+              <h3 className="text-lg font-semibold">{selectedDate.toLocaleDateString(LOCALE_TAG[lang], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
               <button onClick={handleAddShift} className="flex items-center gap-2 rounded-lg bg-accent-500 px-4 py-2 text-sm text-white transition-colors hover:bg-accent-600">
                 <Plus className="h-4 w-4" />
-                {selectedShift ? 'Edit Shift' : 'Add Shift'}
+                {selectedShift ? t.editShift : t.addShift}
               </button>
             </div>
           </div>
@@ -193,13 +195,13 @@ export function WorkScheduleCalendar() {
                       </div>
                     )}
                     {selectedShift.notes && <p className="text-sm text-gray-400">{selectedShift.notes}</p>}
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_BADGE[selectedShift.status]}`}>{selectedShift.status}</span>
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[selectedShift.status]}`}>{shiftStatusLabel(selectedShift.status, t)}</span>
                   </div>
                   <div className="ml-4 flex shrink-0 gap-1">
-                    <button onClick={() => handleEditShift(selectedShift)} className="rounded p-2 text-blue-600 transition-colors hover:bg-blue-50" title="Edit shift">
+                    <button onClick={() => handleEditShift(selectedShift)} className="rounded p-2 text-blue-600 transition-colors hover:bg-blue-50" title={t.editShift}>
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={() => void handleDeleteShift(selectedShift.id)} className="rounded p-2 text-red-500 transition-colors hover:bg-red-50" title="Delete shift">
+                    <button onClick={() => void handleDeleteShift(selectedShift.id)} className="rounded p-2 text-red-500 transition-colors hover:bg-red-50" title={t.deleteShiftTitle}>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -218,7 +220,7 @@ export function WorkScheduleCalendar() {
                           </div>
                         </div>
                       </div>
-                      <span className="text-xs font-medium capitalize opacity-60">{slot.shiftType}</span>
+                      <span className="text-xs font-medium opacity-60">{shiftTypeLabel(slot.shiftType, t)}</span>
                     </div>
                   ))}
                 </div>
@@ -226,10 +228,10 @@ export function WorkScheduleCalendar() {
             ) : (
               <div className="py-8 text-center text-gray-400">
                 <CalendarIcon className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-                <p className="text-sm">No shifts scheduled for this day</p>
+                <p className="text-sm">{t.noShiftsScheduled}</p>
                 <button onClick={handleAddShift} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent-500 px-4 py-2 text-sm text-white transition-colors hover:bg-accent-600">
                   <Plus className="h-4 w-4" />
-                  Add Shift
+                  {t.addShift}
                 </button>
               </div>
             )}

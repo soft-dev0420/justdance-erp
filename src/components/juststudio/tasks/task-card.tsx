@@ -1,10 +1,12 @@
 import { Calendar } from 'lucide-react';
 
+import { LOCALE_TAG, useLanguage } from '@/lib/i18n';
 import type { Task } from '@/lib/types';
 
-import { CARD_BORDER, CATEGORY_TAG, TASK_PRIORITY_LABEL, formatDue, getInitials, isOverdue, type Staff } from './types';
+import { CARD_BORDER, CATEGORY_TAG, formatDue, getInitials, isOverdue, taskPriorityLabel, type Staff } from './types';
 
 export function TaskCard({ task, staff, isActive, onClick }: { task: Task; staff: Staff[]; isActive: boolean; onClick: () => void }) {
+  const { t, lang } = useLanguage();
   const assignees = staff.filter((s) => (task.assignees ?? []).includes(s.id));
   const overdue = isOverdue(task);
   const border = CARD_BORDER[task.status] ?? 'border-l-gray-300';
@@ -22,9 +24,9 @@ export function TaskCard({ task, staff, isActive, onClick }: { task: Task; staff
       <div className="mb-3 flex flex-wrap gap-1.5">
         <span className={`rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${catCls}`}>{task.category}</span>
         <span className={`rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${task.priority === 'high' ? 'bg-red-50 text-red-500' : task.priority === 'medium' ? 'bg-orange-50 text-orange-500' : 'bg-green-50 text-green-600'}`}>
-          {TASK_PRIORITY_LABEL[task.priority]}
+          {taskPriorityLabel(task.priority, t)}
         </span>
-        {overdue && <span className="rounded bg-red-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600">Overdue</span>}
+        {overdue && <span className="rounded bg-red-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-red-600">{t.overdueLabel}</span>}
       </div>
 
       <h4 className={`mb-1 text-sm font-semibold leading-snug ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{task.title}</h4>
@@ -33,7 +35,7 @@ export function TaskCard({ task, staff, isActive, onClick }: { task: Task; staff
       <div className="flex items-center justify-between">
         <span className={`flex items-center gap-1.5 text-[11px] font-medium ${overdue ? 'text-red-500' : task.status === 'in-progress' ? 'text-accent-600' : task.status === 'completed' ? 'text-green-600' : 'text-gray-500'}`}>
           <Calendar size={12} className="shrink-0" />
-          {formatDue(task.dueDate, task.dueTime)}
+          {formatDue(task.dueDate, task.dueTime, t.today, LOCALE_TAG[lang])}
         </span>
 
         {assignees.length > 0 ? (

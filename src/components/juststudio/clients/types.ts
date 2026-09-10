@@ -1,10 +1,20 @@
-export const STATUS_LABELS: Record<string, string> = {
-  'regular-customer': 'Regular',
-  'new-customer': 'New',
-  vip: 'VIP',
-  'be-careful': 'Be careful',
-  'do-not-accept': 'Do not accept',
-};
+import type { T } from '@/lib/i18n';
+
+export const CLIENT_STATUSES = ['regular-customer', 'new-customer', 'vip', 'be-careful', 'do-not-accept'] as const;
+
+// A plain module-level object can't call useLanguage() itself — callers
+// (all of which do have access to `t`) resolve the label through this
+// function instead of a static lookup table.
+export function clientStatusLabel(status: string, t: T): string {
+  const labels: Record<string, string> = {
+    'regular-customer': t.statusRegular,
+    'new-customer': t.statusNew,
+    vip: t.statusVip,
+    'be-careful': t.statusBeCareful,
+    'do-not-accept': t.statusDoNotAccept,
+  };
+  return labels[status] ?? status;
+}
 
 export const STATUS_BADGE_CLASS: Record<string, string> = {
   'regular-customer': 'bg-emerald-50 text-emerald-700',

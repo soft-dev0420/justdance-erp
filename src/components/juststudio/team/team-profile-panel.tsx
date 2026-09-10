@@ -2,9 +2,10 @@
 
 import { Crown, Pencil, UserSquare2, X } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
 import type { Employee } from '@/lib/types';
 
-import { formatDate, getInitials, STATUS_BADGE_CLASS, STATUS_LABELS } from './types';
+import { formatDate, getInitials, statusLabel, STATUS_BADGE_CLASS } from './types';
 
 export function TeamProfilePanel({
   member,
@@ -15,14 +16,15 @@ export function TeamProfilePanel({
   onClose: () => void;
   onEdit: (member: Employee) => void;
 }) {
+  const { t } = useLanguage();
   if (!member) {
     return (
       <div className="hidden w-[400px] flex-shrink-0 flex-col items-center justify-center border-l border-gray-100 bg-white p-10 text-center lg:flex">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
           <UserSquare2 size={26} className="text-gray-400" />
         </div>
-        <p className="mb-1 text-sm font-medium text-gray-600">No team member selected</p>
-        <p className="text-xs text-gray-400">Click a card to view their details</p>
+        <p className="mb-1 text-sm font-medium text-gray-600">{t.noTeamMemberSelected}</p>
+        <p className="text-xs text-gray-400">{t.clickCardToViewDetails}</p>
       </div>
     );
   }
@@ -44,22 +46,22 @@ export function TeamProfilePanel({
                   {member.name}
                   {member.isOwner && <Crown size={16} className="text-accent-500" />}
                 </h2>
-                <p className="mt-0.5 mb-2 text-xs text-gray-500">{member.role?.name ?? 'No role assigned'}</p>
-                <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE_CLASS[member.status]}`}>{STATUS_LABELS[member.status]}</span>
+                <p className="mt-0.5 mb-2 text-xs text-gray-500">{member.role?.name ?? t.noRoleAssigned}</p>
+                <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE_CLASS[member.status]}`}>{statusLabel(member.status, t)}</span>
               </div>
             </div>
-            <button onClick={onClose} className="text-gray-400 transition-colors hover:text-gray-700" aria-label="Close panel">
+            <button onClick={onClose} className="text-gray-400 transition-colors hover:text-gray-700" aria-label={t.closePanel}>
               <X size={19} />
             </button>
           </div>
 
           <div className="relative z-10 grid grid-cols-2 gap-2">
             <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
-              <div className="mb-0.5 text-[10px] text-gray-500">Speciality</div>
+              <div className="mb-0.5 text-[10px] text-gray-500">{t.speciality}</div>
               <div className="truncate text-xs font-semibold text-gray-900">{member.speciality || '—'}</div>
             </div>
             <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
-              <div className="mb-0.5 text-[10px] text-gray-500">Joined</div>
+              <div className="mb-0.5 text-[10px] text-gray-500">{t.joined}</div>
               <div className="truncate text-xs font-semibold text-gray-900">{formatDate(member.createdAt)}</div>
             </div>
           </div>
@@ -67,20 +69,20 @@ export function TeamProfilePanel({
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase">Contact information</h3>
+            <h3 className="mb-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase">{t.contactInformation}</h3>
             <div className="space-y-2.5 text-sm">
               <div className="flex items-center justify-between gap-4">
-                <span className="flex-shrink-0 text-gray-500">Email</span>
+                <span className="flex-shrink-0 text-gray-500">{t.email}</span>
                 <span className="truncate font-medium text-gray-900">{member.email ?? '—'}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="flex-shrink-0 text-gray-500">Role</span>
+                <span className="flex-shrink-0 text-gray-500">{t.fieldRole}</span>
                 <span className="truncate font-medium text-gray-900">{member.role?.name ?? '—'}</span>
               </div>
             </div>
           </div>
 
-          {member.isOwner && <p className="text-center text-xs text-gray-400">The studio owner can&apos;t be edited as a regular team member.</p>}
+          {member.isOwner && <p className="text-center text-xs text-gray-400">{t.ownerCantBeEditedAsTeamMember}</p>}
         </div>
 
         {!member.isOwner && (
@@ -89,7 +91,7 @@ export function TeamProfilePanel({
               onClick={() => onEdit(member)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent-500 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-600"
             >
-              <Pencil size={14} /> Edit team member
+              <Pencil size={14} /> {t.editTeamMember}
             </button>
           </div>
         )}

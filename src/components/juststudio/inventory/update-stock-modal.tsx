@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 import { stockApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
+import { useLanguage } from '@/lib/i18n';
 import type { StockItem } from '@/lib/types';
 
 type MovementType = 'replenish' | 'use';
@@ -21,6 +22,7 @@ export function UpdateStockModal({
   onClose: () => void;
   onUpdate: (updated: StockItem) => void;
 }) {
+  const { t } = useLanguage();
   const [data, setData] = useState({ type: defaultType, quantity: 0, notes: '' });
   const [loading, setLoading] = useState(false);
 
@@ -37,10 +39,10 @@ export function UpdateStockModal({
     setLoading(true);
     try {
       const updated = await stockApi.adjust(product.id, { type: data.type, quantity: data.quantity, notes: data.notes || undefined });
-      toast.success('Stock updated');
+      toast.success(t.stockUpdated);
       onUpdate(updated);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to update stock');
+      toast.error(err instanceof ApiError ? err.message : t.failedToUpdateStock);
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ export function UpdateStockModal({
           <form onSubmit={handleSubmit} className="flex flex-col">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
               <div>
-                <h3 className="text-base font-semibold text-gray-900">Update stock</h3>
+                <h3 className="text-base font-semibold text-gray-900">{t.updateStock}</h3>
                 <p className="mt-0.5 max-w-[260px] truncate text-sm text-gray-500">{product.name}</p>
               </div>
               <button type="button" onClick={onClose} className="text-gray-400 transition-colors hover:text-gray-600">
@@ -64,14 +66,14 @@ export function UpdateStockModal({
 
             <div className="space-y-5 px-6 py-5">
               <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                <span className="text-sm text-gray-600">Current stock</span>
+                <span className="text-sm text-gray-600">{t.currentStockLabel}</span>
                 <span className="text-lg font-bold text-gray-900">
                   {product.currentStock} <span className="text-sm font-normal text-gray-500">{product.unit}</span>
                 </span>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">Operation</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700">{t.operation}</label>
                 <div className="grid grid-cols-2 gap-3">
                   {(['replenish', 'use'] as MovementType[]).map((type) => (
                     <button
@@ -85,14 +87,14 @@ export function UpdateStockModal({
                       <div className={`mb-1.5 flex h-8 w-8 items-center justify-center rounded-full ${data.type === type ? 'bg-accent-100 text-accent-700' : 'bg-gray-100 text-gray-500'}`}>
                         {type === 'replenish' ? <Plus size={16} /> : <Minus size={16} />}
                       </div>
-                      <span className={`text-sm font-semibold ${data.type === type ? 'text-accent-700' : 'text-gray-700'}`}>{type === 'replenish' ? 'Add stock' : 'Use stock'}</span>
+                      <span className={`text-sm font-semibold ${data.type === type ? 'text-accent-700' : 'text-gray-700'}`}>{type === 'replenish' ? t.addStockOption : t.useStockOption}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">{data.type === 'replenish' ? 'Quantity to add' : 'Quantity to use'}</label>
+                <label className="block text-sm font-medium text-gray-700">{data.type === 'replenish' ? t.quantityToAdd : t.quantityToUse}</label>
                 <div className="relative mt-1">
                   <input
                     type="number"
@@ -110,19 +112,19 @@ export function UpdateStockModal({
                 {willBeNegative && (
                   <p className="mt-1.5 flex items-center gap-1 text-xs text-red-500">
                     <AlertTriangle size={13} className="shrink-0" />
-                    Cannot exceed {product.currentStock} {product.unit}
+                    {t.cannotExceed.replace('{value}', String(product.currentStock))} {product.unit}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Notes</label>
+                <label className="block text-sm font-medium text-gray-700">{t.notesLabel}</label>
                 <textarea
                   name="notes"
                   rows={2}
                   value={data.notes}
                   onChange={handleChange}
-                  placeholder="Optional"
+                  placeholder={t.optionalPlaceholder}
                   className="mt-1 block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
                 />
               </div>
@@ -130,7 +132,7 @@ export function UpdateStockModal({
 
             <div className="flex justify-end gap-2 rounded-b-2xl border-t border-gray-100 bg-gray-50 px-6 py-4">
               <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
-                Cancel
+                {t.cancel}
               </button>
               <button
                 type="submit"
@@ -139,7 +141,7 @@ export function UpdateStockModal({
                   loading || willBeNegative || data.quantity <= 0 ? 'cursor-not-allowed bg-gray-300' : 'bg-accent-500 hover:bg-accent-600'
                 }`}
               >
-                {loading ? 'Updating…' : 'Update stock'}
+                {loading ? t.updating : t.updateStock}
               </button>
             </div>
           </form>

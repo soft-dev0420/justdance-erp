@@ -5,9 +5,10 @@ import { useState } from 'react';
 import { Button } from '@/components/juststudio/ui/button';
 import { Input, Label, Select, Textarea } from '@/components/juststudio/ui/input';
 import { Modal } from '@/components/juststudio/ui/modal';
+import { useLanguage } from '@/lib/i18n';
 import type { Employee, StudioClient } from '@/lib/types';
 
-import { STATUS_LABELS } from './types';
+import { clientStatusLabel, CLIENT_STATUSES } from './types';
 
 interface AddValues {
   email: string;
@@ -40,6 +41,7 @@ export function ClientFormModal({
   onSubmitAdd: (values: AddValues) => void;
   onSubmitEdit: (values: EditValues) => void;
 }) {
+  const { t } = useLanguage();
   // Lazy initializers read straight from props — the parent remounts this
   // component (via a `key` keyed to the target client/mode) whenever the
   // edit target changes, so there's no need to sync state via an effect.
@@ -54,17 +56,17 @@ export function ClientFormModal({
 
   if (mode === 'add') {
     return (
-      <Modal open title="Add client" onClose={onClose}>
+      <Modal open title={t.addClient} onClose={onClose}>
         <div className="flex flex-col gap-4">
           <div>
-            <Label>Client&apos;s email</Label>
-            <Input type="email" value={add.email} onChange={(e) => setAdd((s) => ({ ...s, email: e.target.value }))} placeholder="dancer@example.com" />
-            <p className="mt-1.5 text-xs text-gray-500">They need an existing Just Dance account with this email.</p>
+            <Label>{t.clientsEmailLabel}</Label>
+            <Input type="email" value={add.email} onChange={(e) => setAdd((s) => ({ ...s, email: e.target.value }))} placeholder={t.clientEmailPlaceholder} />
+            <p className="mt-1.5 text-xs text-gray-500">{t.clientEmailHint}</p>
           </div>
           <div>
-            <Label>Instructor (optional)</Label>
+            <Label>{t.instructorOptional}</Label>
             <Select value={add.instructorId} onChange={(e) => setAdd((s) => ({ ...s, instructorId: e.target.value }))}>
-              <option value="">Unassigned</option>
+              <option value="">{t.unassigned}</option>
               {employees.map((emp) => (
                 <option key={emp.id} value={emp.id}>
                   {emp.name}
@@ -73,11 +75,11 @@ export function ClientFormModal({
             </Select>
           </div>
           <div>
-            <Label>Notes (optional)</Label>
+            <Label>{t.notesOptional}</Label>
             <Textarea rows={3} value={add.notes} onChange={(e) => setAdd((s) => ({ ...s, notes: e.target.value }))} />
           </div>
           <Button onClick={() => onSubmitAdd(add)} disabled={submitting || !add.email}>
-            {submitting ? 'Adding…' : 'Add client'}
+            {submitting ? t.adding : t.addClient}
           </Button>
         </div>
       </Modal>
@@ -86,23 +88,23 @@ export function ClientFormModal({
 
   if (mode === 'edit' && client) {
     return (
-      <Modal open title={`Edit ${client.client.user.name}`} onClose={onClose}>
+      <Modal open title={`${t.edit} ${client.client.user.name}`} onClose={onClose}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Status</Label>
+              <Label>{t.statusFieldLabel}</Label>
               <Select value={edit.status} onChange={(e) => setEdit((s) => ({ ...s, status: e.target.value }))}>
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                {CLIENT_STATUSES.map((value) => (
                   <option key={value} value={value}>
-                    {label}
+                    {clientStatusLabel(value, t)}
                   </option>
                 ))}
               </Select>
             </div>
             <div>
-              <Label>Instructor</Label>
+              <Label>{t.instructorLabel}</Label>
               <Select value={edit.instructorId} onChange={(e) => setEdit((s) => ({ ...s, instructorId: e.target.value }))}>
-                <option value="">Unassigned</option>
+                <option value="">{t.unassigned}</option>
                 {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>
                     {emp.name}
@@ -113,12 +115,12 @@ export function ClientFormModal({
           </div>
 
           <div>
-            <Label>Notes</Label>
+            <Label>{t.notesLabel}</Label>
             <Textarea rows={3} value={edit.notes} onChange={(e) => setEdit((s) => ({ ...s, notes: e.target.value }))} />
           </div>
 
           <label className="flex cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 select-none">
-            <span className="text-sm font-medium text-gray-800">Has an injury to note</span>
+            <span className="text-sm font-medium text-gray-800">{t.hasInjuryToggle}</span>
             <button
               type="button"
               role="switch"
@@ -132,13 +134,13 @@ export function ClientFormModal({
 
           {edit.hasInjury && (
             <div>
-              <Label>Injury details</Label>
-              <Input value={edit.injuryNotes} onChange={(e) => setEdit((s) => ({ ...s, injuryNotes: e.target.value }))} placeholder="e.g. Recovering from a knee sprain" />
+              <Label>{t.injuryDetailsLabel}</Label>
+              <Input value={edit.injuryNotes} onChange={(e) => setEdit((s) => ({ ...s, injuryNotes: e.target.value }))} placeholder={t.injuryDetailsPlaceholder} />
             </div>
           )}
 
           <Button onClick={() => onSubmitEdit(edit)} disabled={submitting}>
-            {submitting ? 'Saving…' : 'Save changes'}
+            {submitting ? t.saving : t.saveChanges}
           </Button>
         </div>
       </Modal>

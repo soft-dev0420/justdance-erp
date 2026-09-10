@@ -1,3 +1,4 @@
+import type { T } from '@/lib/i18n';
 import type { Task } from '@/lib/types';
 
 export interface Staff {
@@ -7,22 +8,35 @@ export interface Staff {
 }
 
 export const COLUMNS = [
-  { id: 'pending', label: 'Pending', countCls: 'bg-gray-200 text-gray-600' },
-  { id: 'in-progress', label: 'In progress', countCls: 'bg-accent-100 text-accent-700' },
-  { id: 'completed', label: 'Completed', countCls: 'bg-gray-200 text-gray-600' },
+  { id: 'pending', countCls: 'bg-gray-200 text-gray-600' },
+  { id: 'in-progress', countCls: 'bg-accent-100 text-accent-700' },
+  { id: 'completed', countCls: 'bg-gray-200 text-gray-600' },
 ] as const;
 
-export const TASK_STATUS_LABEL: Record<Task['status'], string> = {
-  pending: 'Pending',
-  'in-progress': 'In progress',
-  completed: 'Completed',
-};
+export function columnLabel(id: (typeof COLUMNS)[number]['id'], t: T): string {
+  return taskStatusLabel(id, t);
+}
 
-export const TASK_PRIORITY_LABEL: Record<Task['priority'], string> = {
-  high: 'High priority',
-  medium: 'Medium priority',
-  low: 'Low priority',
-};
+// Plain module-level objects can't call useLanguage() themselves — callers
+// (all of which do have access to `t`) resolve labels through these
+// functions instead of static lookup tables.
+export function taskStatusLabel(status: Task['status'], t: T): string {
+  const labels: Record<Task['status'], string> = {
+    pending: t.taskStatusPending,
+    'in-progress': t.taskStatusInProgress,
+    completed: t.taskStatusCompleted,
+  };
+  return labels[status];
+}
+
+export function taskPriorityLabel(priority: Task['priority'], t: T): string {
+  const labels: Record<Task['priority'], string> = {
+    high: t.priorityHigh,
+    medium: t.priorityMedium,
+    low: t.priorityLow,
+  };
+  return labels[priority];
+}
 
 export const CATEGORIES = ['general', 'costumes', 'choreography', 'maintenance', 'inventory', 'event', 'internal'];
 
@@ -75,12 +89,12 @@ export function isOverdue(task: Task): boolean {
   return due < today;
 }
 
-export function formatDue(date: string, time: string, todayLabel = 'Today'): string {
+export function formatDue(date: string, time: string, todayLabel = 'Today', locale = 'en-US'): string {
   if (!date) return '—';
   const [y, m, d] = date.split('-').map(Number);
   const parsed = new Date(y!, m! - 1, d!);
   const today = new Date();
   const isToday = parsed.toDateString() === today.toDateString();
-  const label = isToday ? todayLabel : parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const label = isToday ? todayLabel : parsed.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   return time ? `${label}, ${time}` : label;
 }

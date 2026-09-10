@@ -6,15 +6,17 @@ import { Suspense, useEffect, useState } from 'react';
 
 import { authApi } from '@/lib/api';
 import { ApiError } from '@/lib/api-fetch';
+import { useLanguage } from '@/lib/i18n';
 
 type VerifyState = 'verifying' | 'success' | 'error';
 
 function VerifyEmailContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
   const [state, setState] = useState<VerifyState>(token ? 'verifying' : 'error');
-  const [error, setError] = useState(token ? '' : 'Missing verification token.');
+  const [error, setError] = useState(token ? '' : t.missingVerificationToken);
 
   useEffect(() => {
     if (!token) return;
@@ -24,7 +26,7 @@ function VerifyEmailContent() {
         setState('success');
       } catch (err) {
         setState('error');
-        setError(err instanceof ApiError ? err.message : 'Something went wrong.');
+        setError(err instanceof ApiError ? err.message : t.authGenericError);
       }
     })();
     // token comes from the URL once per page load — not something that
@@ -37,7 +39,7 @@ function VerifyEmailContent() {
       {state === 'verifying' && (
         <>
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-accent-200 border-t-accent-500" />
-          <h1 className="text-lg font-semibold text-gray-900">Verifying your email…</h1>
+          <h1 className="text-lg font-semibold text-gray-900">{t.verifyingEmail}</h1>
         </>
       )}
       {state === 'success' && (
@@ -45,13 +47,13 @@ function VerifyEmailContent() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-500">
             <CheckGlyph />
           </div>
-          <h1 className="text-lg font-semibold text-gray-900">Email verified!</h1>
-          <p className="mt-1 text-sm text-gray-500">Your account is ready to go.</p>
+          <h1 className="text-lg font-semibold text-gray-900">{t.emailVerifiedHeading}</h1>
+          <p className="mt-1 text-sm text-gray-500">{t.emailVerifiedSubtitle}</p>
           <Link
             href="/auth/login"
             className="mt-6 inline-block w-full rounded-lg bg-accent-500 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-600"
           >
-            Continue to sign in
+            {t.continueToSignIn}
           </Link>
         </>
       )}
@@ -60,13 +62,13 @@ function VerifyEmailContent() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
             <WarningGlyph />
           </div>
-          <h1 className="text-lg font-semibold text-gray-900">Couldn&apos;t verify email</h1>
+          <h1 className="text-lg font-semibold text-gray-900">{t.couldNotVerifyHeading}</h1>
           <p className="mt-1 text-sm text-gray-500">{error}</p>
           <Link
             href="/auth/login"
             className="mt-6 inline-block w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
           >
-            Go to sign in
+            {t.goToSignIn}
           </Link>
         </>
       )}

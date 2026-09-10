@@ -1,3 +1,15 @@
+import type { T } from '@/lib/i18n';
+
+export function shiftTypeLabel(type: string, t: T): string {
+  const labels: Record<string, string> = { morning: t.morningLabel, afternoon: t.afternoonLabel, evening: t.eveningLabel };
+  return labels[type] ?? type;
+}
+
+export function shiftStatusLabel(status: string, t: T): string {
+  const labels: Record<string, string> = { scheduled: t.shiftStatusScheduled, completed: t.taskStatusCompleted, cancelled: t.shiftStatusCancelled };
+  return labels[status] ?? status;
+}
+
 export const SHIFT_CHIP: Record<string, string> = {
   morning: 'bg-amber-100 text-amber-800 border-amber-200',
   afternoon: 'bg-blue-100 text-blue-800 border-blue-200',
